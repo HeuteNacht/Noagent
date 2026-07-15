@@ -1,0 +1,5 @@
+identity: effector
+listen_to_nodes:
+  - frontal_lobe
+subscriptions:
+  - "action.execute"

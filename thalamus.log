@@ -1,0 +1,16 @@
+2026-07-15 10:30:52.414 | INFO     | white_matter.neuron_base:__init__:30 - 🧬 [frontal_lobe] 轴突绑定至: tcp://*:22002
+2026-07-15 10:30:52.415 | INFO     | white_matter.neuron_base:__init__:35 - 🪢 [frontal_lobe] 激活受体: stimulus.raw
+2026-07-15 10:30:52.415 | INFO     | white_matter.neuron_base:__init__:41 - 🔗 [frontal_lobe] 桥接至 sensory_gateway (tcp://127.0.0.1:22001)
+2026-07-15 10:30:52.415 | SUCCESS  | white_matter.neuron_base:listen:49 - 🟢 [frontal_lobe] 脑区激活，潜意识倾听中...
+2026-07-15 10:30:52.428 | INFO     | white_matter.neuron_base:__init__:30 - 🧬 [sensory_gateway] 轴突绑定至: tcp://*:22001
+2026-07-15 10:30:52.469 | SUCCESS  | white_matter.neuron_base:listen:49 - 🟢 [sensory_gateway] 脑区激活，潜意识倾听中...
+2026-07-15 10:30:52.915 | INFO     | white_matter.neuron_base:__init__:30 - 🧬 [effector] 轴突绑定至: tcp://*:22003
+2026-07-15 10:30:52.915 | INFO     | white_matter.neuron_base:__init__:35 - 🪢 [effector] 激活受体: action.execute
+2026-07-15 10:30:52.915 | INFO     | white_matter.neuron_base:__init__:41 - 🔗 [effector] 桥接至 frontal_lobe (tcp://127.0.0.1:22002)
+2026-07-15 10:30:52.916 | SUCCESS  | white_matter.neuron_base:listen:49 - 🟢 [effector] 脑区激活，潜意识倾听中...
+2026-07-15 10:33:05.406 | WARNING  | __main__:websocket_endpoint:55 - ⛔️ [免疫拦截] 发现陌生设备试图接入: ios_tui_2389ea99
+2026-07-15 11:01:45.087 | SUCCESS  | __main__:websocket_endpoint:64 - 🔓 [准入放行] 合法设备: ios_tui_2389ea99
+2026-07-15 11:01:45.088 | DEBUG    | white_matter.neuron_base:fire_signal:46 - ⚡️ [sensory_gateway] 释放 -> stimulus.raw
+2026-07-15 11:01:45.089 | DEBUG    | white_matter.neuron_base:listen:53 - 🧠 [frontal_lobe] 捕捉 <- stimulus.raw
+2026-07-15 11:01:45.089 | INFO     | __main__:process_signal:12 - 🤔 意图解析: [[SYSTEM_HANDSHAKE_PING]]
+2026-07-15 11:01:45.089 | INFO     | __main__:process_signal:18 - 🤷 无需物理行动: [SYSTEM_HANDSHAKE_PING]

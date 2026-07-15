@@ -1,0 +1,7 @@
+# 🧬 Noa 命令行受体图谱 (支持热拔插)
+commands:
+  noa: "bash {WORKSPACE}/dna/noa_cli.sh"
+  noa-approve: "python3 {WORKSPACE}/dna/device_manager.py"
+  noa-log: "tail -f {WORKSPACE}/thalamus.log"
+  noa-tui: "python3 {WORKSPACE}/dna/local_tui.py"
+  noa-install: "bash {WORKSPACE}/dna/install.sh"

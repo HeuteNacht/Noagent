@@ -1,0 +1,11 @@
+# 🧠 Noa 全局静态结构连接组
+nodes:
+  sensory_gateway:
+    host: "127.0.0.1"
+    pub_port: 22001
+  frontal_lobe:
+    host: "127.0.0.1"
+    pub_port: 22002
+  effector:
+    host: "127.0.0.1"
+    pub_port: 22003
