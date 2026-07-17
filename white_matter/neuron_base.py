@@ -56,10 +56,24 @@ class NeuronNode:
     async def process_signal(self, topic: str, message: dict):
         pass
 
+    def shutdown(self):
+        """切断神经连接并释放资源"""
+        logger.info(f"🛑 [{self.identity}] 正在切断突触连接...")
+        # 设置 LINGER 为 0，防止 socket 挂起
+        self.axon.setsockopt(zmq.LINGER, 0)
+        self.dendrite.setsockopt(zmq.LINGER, 0)
+        
+        self.axon.close()
+        self.dendrite.close()
+        self.ctx.term()
+        logger.success(f"💤 [{self.identity}] 已完全休眠。")
+
+            
     def run(self):
         try: loop = asyncio.get_event_loop()
         except RuntimeError:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
         try: loop.run_until_complete(self.listen())
-        except KeyboardInterrupt: logger.info(f"🛑 [{self.identity}] 休眠。")
+        except KeyboardInterrupt:
+            self.shutdown()
