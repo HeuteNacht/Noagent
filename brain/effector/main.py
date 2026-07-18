@@ -1,45 +1,38 @@
-#!/usr/bin/env python3
-import os, sys, asyncio
-_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-if _ROOT not in sys.path: sys.path.insert(0, _ROOT)
-from white_matter.neuron_base import NeuronNode
-from loguru import logger
+import yaml # 确保导入 yaml
 
 class Effector(NeuronNode):
     async def process_signal(self, topic: str, message: dict):
         if topic == "action.execute":
-            cmd = message.get("payload", {}).get("command")
-            logger.warning(f"🦾 触发动作: {cmd}")
+            payload = message.get("payload", {})
+            cmd = payload.get("command")
             
-            if cmd == "wake_babe_server":
-                logger.info("   ↳ 发射 WOL 唤醒...")
-                # 示例：异步执行系统 ping 或 wakeonlan 命令
-                await self.async_exec("wakeonlan 00:11:22:33:44:55")
+            if cmd == "rewire_yaml":
+                target_node = payload.get("target_node")
+                topic_to_add = payload.get("topic_to_add")
+                logger.warning(f"🧬 激活神经可塑性: 正在重连 [{target_node}] 的突触...")
                 
-            elif cmd == "shutdown_host":
-                logger.critical("   ↳ 关机序列启动...")
-                # 示例：异步执行关机命令
-                await self.async_exec("shutdown /s /t 10")
-
-    async def async_exec(self, command: str):
-        """底层的异步子进程执行器"""
-        try:
-            process = await asyncio.create_subprocess_shell(
-                command,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            stdout, stderr = await process.communicate()
-            
-            if process.returncode == 0:
-                logger.success(f"✅ 执行成功: {stdout.decode().strip()}")
-            else:
-                logger.error(f"❌ 执行失败: {stderr.decode().strip()}")
-        except Exception as e:
-            logger.error(f"⚠️ 子进程异常: {e}")
-
-if __name__ == "__main__":
-    Effector(
-        os.path.join(os.path.dirname(__file__), "synapse.yaml"), 
-        os.path.join(_ROOT, "dna", "known_nodes.yaml")
-    ).run()
+                # 定位目标脑区的 YAML 文件
+                yaml_path = os.path.join(_ROOT, "brain", target_node, "synapse.yaml")
+                
+                if not os.path.exists(yaml_path):
+                    logger.error(f"❌ 找不到节点 {target_node} 的突触配置文件。")
+                    return
+                
+                # 读写修改 YAML
+                with open(yaml_path, 'r', encoding='utf-8') as f:
+                    config = yaml.safe_load(f)
+                
+                # 幂等性检查：如果已经订阅，则跳过
+                if topic_to_add not in config.setdefault("subscriptions", []):
+                    config["subscriptions"].append(topic_to_add)
+                    
+                    with open(yaml_path, 'w', encoding='utf-8') as f:
+                        yaml.dump(config, f, allow_unicode=True, default_flow_style=False)
+                    
+                    logger.success(f"✅ YAML 基因已修改: {target_node} 现已永久包含 {topic_to_add}")
+                    
+                    # ⚠️ 关键一步：发送热重载信号，通知目标节点立刻生效
+                    await self.fire_signal("system.neuroplasticity", {
+                        "target_node": target_node,
+                        "new_topic": topic_to_add
+                    })
