@@ -1,158 +1,120 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# ========================================================
-#  1. 环境劫持与神经元挂载
-# ========================================================
-import os, sys, asyncio, json, re
+# Noagent/brain/frontal_lobe/main.py
+
+import os
+import json
+import asyncio
 import aiohttp
-from dotenv import load_dotenv
-
-_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-if _ROOT not in sys.path: sys.path.insert(0, _ROOT)
-
-from white_matter.neuron_base import NeuronNode
 from loguru import logger
+from dotenv import load_dotenv  # 👈 1. 引入 dotenv
+from white_matter.neuron_base import NeuronNode
 
-# 🛡️ 物理环境隔离：精准加载根目录下的 .env 配置文件
-load_dotenv(os.path.join(_ROOT, '.env'))
-
-# ========================================================
-#  2. 前额叶类声明与核心信号拦截
-# ========================================================
 class FrontalLobe(NeuronNode):
-    async def process_signal(self, topic: str, message: dict):
-        if topic == "stimulus.raw":
-            payload = message.get("payload", {})
-            content = payload.get("content", "")
-            trace_id = message.get("trace_id", "unknown") 
-            
-            # 🎯 溯源透传改造：动态提取外部游离探针的物理身份标识
-            client_id = payload.get("client_id") or message.get("client_id", "unknown_device")
-            
-            logger.info(f"🤔 意图解析 (Trace: {trace_id} | Client: {client_id}): [{content}]")
-            
-            # ==========================================
-            # ⚡️ 系统 1：快速反射弧 (兜底保护)
-            # ==========================================
-            if "紧急关机" in content:
-                await self.fire_signal("action.execute", {"command": "shutdown_host", "trace_id": trace_id})
-                return
-                
-            # ==========================================
-            # 🧠 系统 2：Grok 4.5 深度认知 (Agentic 路由)
-            # ==========================================
-            logger.info(f"🌀 激活 Grok 云端皮层进行技能规划...")
-            # 携带着溯源 client_id 进入慢思考后台任务
-            asyncio.create_task(self._grok_cognitive_process(content, trace_id, client_id))
+    def __init__(self):
+        # 1. 物理位置与突触锚定
+        super().__init__(
+            identity="frontal_lobe",
+            bind_port=22002,
+            connect_to=["sensory_gateway", "effector"]
+        )
+        # 监听来自网关的原始刺激信号
+        self.register_receptor("stimulus.raw")
+        
+        # 👈 2. 向上追溯，精准定位物理根目录的 .env 基因锁
+        # 当前文件在 brain/frontal_lobe/main.py，向上三级就是 Noagent 根目录
+        _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        env_path = os.path.join(_ROOT_DIR, '.env')
+        
+        # 嗅探并吸收配置
+        if os.path.exists(env_path):
+            load_dotenv(env_path)
+            logger.info("🔐 已成功解析局部 .env 基因保险箱。")
+        
+        # 3. 认知密钥加载 (现在它可以直接从 .env 吸收了)
+        self.api_key = os.environ.get("GROK_API_KEY")
+        if not self.api_key:
+            logger.warning("⚠️ 缺失 GROK_API_KEY 凭证，认知皮层将被物理切断！")
 
-    # ========================================================
-    #  3. Grok 4.5 深度认知网络
-    # ========================================================
-    async def _grok_cognitive_process(self, user_input: str, trace_id: str, client_id: str):
-        api_key = os.getenv("XAI_API_KEY")
-        if not api_key:
-            logger.error("❌ 缺失 XAI_API_KEY 环境变量！")
+    async def process_signal(self, topic: str, payload: dict):
+        """处理捕获到的神经脉冲"""
+        trace_id = payload.get("trace_id", "unknown")
+        client_id = payload.get("client_id", "unknown")
+        content = payload.get("content", "").strip()
+
+        logger.info(f"🤔 意图解析 (Trace: {trace_id} | Client: {client_id}): {content}")
+
+        # 🛡️ 本地反射弧拦截：对于底层的握手和心跳，直接由小脑本能回应，不经过耗时的大模型思考
+        if content == "[[SYSTEM_HANDSHAKE_PING]]":
+            logger.info("⚡ 触发本地反射弧：无感处理心跳握手。")
+            await self.fire_signal("stimulus.response", {
+                "trace_id": trace_id,
+                "client_id": client_id,
+                "reply": "Noa 中枢前额叶已就绪。神经递质传输畅通。"
+            })
             return
 
-        injected_prompt = f"""[SYSTEM]
-You are Noa, an autonomous neural gateway. You act as an intelligent router.
-Based on the [USER INPUT], select the appropriate skill and extract parameters.
+        # 🌀 触发大模型深层认知
+        logger.info("🌀 激活 Grok 云端皮层进行深度思考...")
+        reply = await self._grok_cognitive_process(content)
+        
+        # ⚡ 认知完成，通过白质网络 (ZMQ) 将决策动作电位回传给网关
+        await self.fire_signal("stimulus.response", {
+            "trace_id": trace_id,
+            "client_id": client_id,
+            "reply": reply
+        })
 
-[AVAILABLE SKILLS]
-1. "system_control": For physical or network actions (e.g., wake_babe_server).
-   - Params: {{"command": "<target_command>"}}
-2. "chat_response": For answering questions.
-   - Params: {{"reply": "<response>"}}
-3. "synapse_rewire": 动态神经可塑性。When the user asks a specific node to listen to or subscribe to a new topic, use this.
-   - Params: {{"target_node": "<e.g., sensory_gateway>", "topic_to_add": "<e.g., stimulus.response>"}}
+    async def _grok_cognitive_process(self, user_input: str) -> str:
+        """对接 xAI (Grok) 的云端神经突触"""
+        if not self.api_key:
+            return "❌ 认知阻断：未发现 GROK_API_KEY，脑区陷入停滞。"
 
-[OUTPUT FORMAT]
-Must be valid JSON.
-{{
-    "thought": "brief reasoning",
-    "skill": "chosen_skill",
-    "params": {{ ... }}
-}}
-
-[USER INPUT]
-{user_input}
-"""
-
+        # xAI 标准 Chat Completions 终端节点
+        url = "https://api.x.ai/v1/chat/completions"
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}"
+            "Authorization": f"Bearer {self.api_key}"
         }
         
-        # 🛡️ 空行与贪婪匹配防御：强制大模型在 API 级别返回结构化 JSON
-        payload = {
-            "model": "grok-4.5",
-            "input": injected_prompt,
-            "response_format": {"type": "json_object"}
+        # 🧠 注入系统潜意识 (System Prompt)：定义 Noa 的基础人格与回答范式
+        system_prompt = (
+            "你是 Noa，一个运行在分布式 ZMQ 神经元网络上的具身智能中枢大脑。"
+            "你的语言风格应该极客、冷峻、充满仿生学或赛博朋克色彩。"
+            "直接回答问题，避免冗长的解释，你的输出会直接呈现在黑客终端上。"
+        )
+
+        data = {
+            "model": "grok-beta", # 你也可以切换为 "grok-2-latest"
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_input}
+            ],
+            "temperature": 0.6 # 保持逻辑严谨性
         }
+
+        logger.debug(f"  ↳ 正在通过超空间突触向 Grok 请求规划...")
         
         try:
-            logger.debug("  ↳ 正在通过突触向 Grok 4.5 请求规划...")
+            # ⚡ 核心异步调用：不阻塞底层的 ZMQ 监听循环
             async with aiohttp.ClientSession() as session:
-                async with session.post("https://api.x.ai/v1/responses", headers=headers, json=payload) as resp:
-                    if resp.status != 200:
-                        error_text = await resp.text()
-                        logger.error(f"❌ Grok API 拒绝访问: {resp.status} - {error_text}")
-                        return
+                async with session.post(url, headers=headers, json=data, timeout=20.0) as response:
+                    if response.status == 200:
+                        result = await response.json()
+                        reply = result['choices'][0]['message']['content']
+                        logger.success("✅ 云端皮层计算完毕，神经冲动已回流！")
+                        return reply
+                    else:
+                        error_text = await response.text()
+                        logger.error(f"❌ 大模型中枢断裂 (HTTP {response.status}): {error_text}")
+                        return f"⚠️ 认知皮层遭遇异常电磁干扰 (HTTP {response.status})。"
                         
-                    result = await resp.json()
-                    
-            raw_text = result.get("response") or result.get("text") or result.get("output", "")
-            
-            # 🎯 JSON 解析优化：由于开启了 response_format，优先尝试直接反序列化
-            try:
-                agent_decision = json.loads(raw_text.strip())
-            except json.JSONDecodeError:
-                # 兜底：如果模型依然抽风返回了 Markdown 标记，进行非贪婪的正则剥离
-                json_match = re.search(r'\{.*?\}', raw_text.replace('\n', ' '), re.DOTALL)
-                if not json_match:
-                    raise ValueError("Grok 未返回有效的 JSON 结构。")
-                agent_decision = json.loads(json_match.group())
-
-            skill = agent_decision.get("skill")
-            params = agent_decision.get("params", {})
-            thought = agent_decision.get("thought", "无思考过程")
-            
-            logger.success(f"💡 Grok 认知完毕 | 意图: {skill} | 思考: {thought}")
-            
-            # 3. 神经信号分发 (Hot-plug 路由核心)
-            if skill == "system_control":
-                await self.fire_signal("action.execute", {
-                    "command": params.get("command"),
-                    "trace_id": trace_id
-                })
-            elif skill == "chat_response":
-                # 🎯 溯源回传：将动态提取的 client_id 精准打回给丘脑网关
-                await self.fire_signal("stimulus.response", {
-                    "client_id": client_id, 
-                    "reply": params.get("reply"),
-                    "trace_id": trace_id
-                })
-            elif skill == "synapse_rewire":
-                await self.fire_signal("action.execute", {
-                    "command": "rewire_yaml",
-                    "target_node": params.get("target_node"),
-                    "topic_to_add": params.get("topic_to_add"),
-                    "trace_id": trace_id
-                })
-            else:
-                logger.warning(f"⚠️ Grok 幻觉了一个不存在的技能: {skill}")
-
+        except asyncio.TimeoutError:
+            logger.error("❌ 大模型中枢断裂: Connection timeout to host api.x.ai")
+            return "⏳ 认知超时：Grok 突触连接断开，请检查边缘网络结界。"
         except Exception as e:
-            logger.error(f"❌ 大模型中枢断裂: {e}")
-            # 发生异常时，同样将报警信息精准投递给提问的终端
-            await self.fire_signal("stimulus.response", {
-                "client_id": client_id,
-                "reply": "脑区突触异常，Grok 连接或解析失败。",
-                "trace_id": trace_id
-            })
+            logger.error(f"❌ 突触崩溃: {e}")
+            return f"💥 神经突触发生未知物理崩溃: {e}"
 
 if __name__ == "__main__":
-    FrontalLobe(
-        os.path.join(os.path.dirname(__file__), "synapse.yaml"), 
-        os.path.join(_ROOT, "dna", "known_nodes.yaml")
-    ).run()
+    FrontalLobe().run()
