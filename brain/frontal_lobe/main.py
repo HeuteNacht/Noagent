@@ -3,20 +3,26 @@
 # Noagent/brain/frontal_lobe/main.py
 
 import os
+import sys
 import json
 import asyncio
 import aiohttp
 from loguru import logger
-from dotenv import load_dotenv  # 👈 1. 引入 dotenv
+
+# 🎯 核心修复：物理环境寻址劫持，确保 Python 能找到 white_matter 基类
+_ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _ROOT_DIR not in sys.path:
+    sys.path.insert(0, _ROOT_DIR)
+
+from dotenv import load_dotenv
 from white_matter.neuron_base import NeuronNode
 
 class FrontalLobe(NeuronNode):
     def __init__(self):
         # 1. 物理位置与突触锚定
         super().__init__(
-            identity="frontal_lobe",
-            bind_port=22002,
-            connect_to=["sensory_gateway", "effector"]
+            local_config_path=os.path.join(os.path.dirname(__file__), "synapse.yaml"),
+            connectome_path=os.path.join(_ROOT_DIR, "dna", "known_nodes.yaml")
         )
         # 监听来自网关的原始刺激信号
         self.register_receptor("stimulus.raw")
