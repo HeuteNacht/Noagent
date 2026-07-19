@@ -3,6 +3,7 @@
 # ========================================================
 #  1. 环境与依赖初始化
 # ========================================================
+import sys
 import zmq
 import zmq.asyncio
 import asyncio
@@ -141,6 +142,12 @@ class NeuronNode:
             
     def run(self):
         """脑区生命维持起搏器"""
+        
+        # 👇 ADD THIS BLOCK 👇
+        if sys.platform == 'win32':
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        # 👆 ADD THIS BLOCK 👆
+            
         try: 
             loop = asyncio.get_event_loop()
         except RuntimeError:
