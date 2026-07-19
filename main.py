@@ -9,6 +9,11 @@ import sys
 import time
 import threading
 
+# 🎯 【Windows 11 编码解毒】
+# 强制将 Windows 终端的输出重配置为 UTF-8，彻底根除 UnicodeEncodeError (GBK 报错)
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding='utf-8')
+
 _ROOT = os.path.dirname(os.path.abspath(__file__))
 # 将统一日志重定向到 DNA 序列文件夹中
 LOG_FILE = os.path.join(_ROOT, "dna", "noa.log")

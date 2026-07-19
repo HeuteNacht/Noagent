@@ -12,6 +12,11 @@ import uvicorn
 from white_matter.neuron_base import NeuronNode
 from loguru import logger
 
+# 🎯 【FastAPI/Uvicorn 事件循环劫持】
+# 必须在 Uvicorn 启动前强行将 Windows 策略扭转为 Selector 模式，否则网关的 ZMQ 后台任务必崩
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 # ========================================================
 #  2. 免疫系统与突触池定义
 # ========================================================
