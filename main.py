@@ -1,57 +1,111 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-#Noagent/main.py
 # ========================================================
 #  1. 环境与路径锚定
 # ========================================================
-# 导入子进程控制、系统路径及时间阻塞模块
-import subprocess, os, time
-# 获取当前 main.py 所在的绝对目录，即项目根目录 ~/Noagent/
+import subprocess
+import os
+import sys
+import time
+import threading
+
 _ROOT = os.path.dirname(os.path.abspath(__file__))
+# 将统一日志重定向到 DNA 序列文件夹中
+LOG_FILE = os.path.join(_ROOT, "dna", "noa.log")
+
+# ⚡ 跨平台动态捕捉当前的 Python 解释器环境 (完美兼容 Conda/Windows/Debian)
+CURRENT_PYTHON = sys.executable
 
 # ========================================================
-#  2. 脑区并发唤醒核心逻辑
+#  2. 细胞器：日志总线与动态扫描
+# ========================================================
+def stream_logger(region_name: str, pipe):
+    """
+    独立抽离的脑区日志记录线程，将 stdout 流式写入统一日志文件，避免终端脏乱
+    """
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
+        for line in iter(pipe.readline, b''):
+            decoded_line = line.decode('utf-8', errors='replace')
+            # 附带脑区名称前缀，方便使用 grep 进行快速过滤
+            f.write(f"[{region_name}] {decoded_line}")
+            f.flush()
+
+def discover_brain_regions() -> list:
+    """
+    动态无监督有丝分裂：自动扫描 ~/Noagent/brain/ 目录下的可用脑区
+    """
+    brain_dir = os.path.join(_ROOT, "brain")
+    regions = []
+    if os.path.exists(brain_dir):
+        for item in os.listdir(brain_dir):
+            script_path = os.path.join(brain_dir, item, "main.py")
+            # 只要该文件夹下存在 main.py，即视为合法可唤醒的脑区
+            if os.path.isdir(os.path.join(brain_dir, item)) and os.path.exists(script_path):
+                regions.append(item)
+    return regions
+
+# ========================================================
+#  3. 脑干督导树核心逻辑 (Supervisor Tree)
 # ========================================================
 def start_brain_regions():
-    # 🧠 硬编码定义需要激活的默认脑区核心集群
-    regions = ["sensory_gateway", "frontal_lobe", "effector"]
-    # 用于挂载和管理所有存活子进程对象的容器
-    processes = []
-    # 使用 ANSI 逃逸字符（\033[1;34m 为加粗蓝色）输出炫酷的初始化 UI
+    regions = discover_brain_regions()
+    processes = {}       # 存放 {region_name: Popen_object}
+    log_threads = {}     # 存放 {region_name: Thread_object}
+
     print("\033[1;34m=============================================================\033[0m")
-    print("⚡️ Noa ZMQ 分布式中枢起搏器点火...")
+    print(f"⚡️ Noa ZMQ 分布式督导起搏器点火 (动态发现 {len(regions)} 个脑区)...")
     print("\033[1;34m=============================================================\033[0m")
     
-    for region in regions:
-        # 动态拼接各脑区的物理入口路径，如 ~/Noagent/brain/sensory_gateway/main.py
+    # 初始化/覆盖上一轮的陈旧日志
+    with open(LOG_FILE, "w", encoding="utf-8") as f:
+        f.write("=== Noa 神经中枢启动日志 ===\n")
+
+    def launch_region(region):
+        """闭包函数：负责（重新）拉起指定脑区进程及挂载日志监听"""
         script = os.path.join(_ROOT, "brain", region, "main.py")
-        # 防御性编程：确保该脑区的核心脚本确实存在，避免抛出底层找不到文件的异常
-        if os.path.exists(script):
-            # ⚡最核心行：使用 Popen 异步非阻塞地在操作系统中派生（Fork）一个独立子进程运行该脑区
-            # 这使得各脑区拥有完全独立的 PID、独立的内存空间和独立的 Python 解释器
-            p = subprocess.Popen(["python3", script])
-            # 将脑区名称和进程句柄以元组形式存入列表，留待后续生命周期管理
-            processes.append((region, p))
-            print(f"🫀 [{region}] 脑区已分离唤醒 (PID: {p.pid})")
-            # 🕰 建立生理节奏：强制暂停 0.5 秒。
-            # 作用是防止瞬间拉起多个网关导致网络端口争抢，或 ZMQ 绑定时发生未定义冲突
-            time.sleep(0.5)
-        # ========================================================
-        #  3. 生命周期监控与阻断（优雅停机）
-        # ========================================================     
-    print("\033[1;32m✅ 突触建立完毕。按 Ctrl+C 切断。\033[0m")
+        
+        # 建立隔离进程，并捕获标准输出和错误输出
+        p = subprocess.Popen(
+            [CURRENT_PYTHON, script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT
+        )
+        processes[region] = p
+        
+        # 挂载伴生线程，专职处理该进程的日志排放 (Daemon=True 保证随主进程关闭)
+        t = threading.Thread(target=stream_logger, args=(region, p.stdout), daemon=True)
+        t.start()
+        log_threads[region] = t
+        print(f"🫀 [{region}] 脑区已激活 (PID: {p.pid})")
+
+    # 初次唤醒所有动态发现的脑区
+    for region in regions:
+        launch_region(region)
+        time.sleep(0.5) # 防止端口瞬间争抢
+        
+    print("\033[1;32m✅ 神经网络构建完毕，督导看门狗 (Watchdog) 已挂载。\033[0m")
+    print("📜 请打开新终端执行 `noa log` 监控分离后的流式脑电波日志。")
+    print("💤 按 Ctrl+C 切断所有突触。")
+
     try:
-        # 守护性阻塞：主进程会在这里循环等待（wait）每一个子进程。
-        # 只要子进程不退出，主进程就一直挂起，维持系统的整体存活状态
-        for _, p in processes: p.wait()
+        # 🔄 督导轮询循环 (取代原本的阻塞 wait)
+        while True:
+            time.sleep(2.0) # 心跳频率：2秒检测一次全盘健康状况
+            for region in list(processes.keys()):
+                p = processes[region]
+                # poll() 如果返回 None 说明进程还活着，否则返回了退出状态码
+                if p.poll() is not None:
+                    exit_code = p.returncode
+                    print(f"\033[1;31m⚠️ 警告: [{region}] 脑区因异常脱落 (Exit Code: {exit_code})，正在进行细胞重组...\033[0m")
+                    launch_region(region) # 触发自愈机制
+                    
     except KeyboardInterrupt:
-        # 捕获用户在终端按下的 Ctrl+C（信号 SIGINT）
+        # 优雅停机协议
         print("\n💤 阻断各脑区供血...")
-        for name, p in processes:
-            # 🩺 向每个脑区子进程发送 SIGTERM 终止信号，通知它们释放 ZMQ 端口、保存免疫数据并优雅退出
-            p.terminate()
-            print(f"   ↳ {name} 脑区已关闭。")
+        for region, p in processes.items():
+            if p.poll() is None: # 只杀死还在运行的进程
+                p.terminate()
+                print(f"   ↳ {region} 脑区已安全进入休眠。")
 
 if __name__ == "__main__":
-    # 点火运行
     start_brain_regions()

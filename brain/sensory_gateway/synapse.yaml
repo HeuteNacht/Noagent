@@ -3,6 +3,7 @@
 # 声明本脑区在分布式网络中的唯一物理人格为“丘脑网关”
 identity: sensory_gateway
 # 无需被动监听任何其他内网脑区的 IP 地址
-listen_to_nodes: []
-# 没有任何订阅的主题。它是神经冲动的源头（发射源），而非消费者。
-subscriptions: []
+listen_to_nodes:
+  - frontal_lobe
+subscriptions:
+  - "stimulus.response"

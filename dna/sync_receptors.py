@@ -1,26 +1,33 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-#Noagent/dna/sync_receptors.py
 # ========================================================
 #  1. 物理坐标计算与依赖导入
 # ========================================================
 import yaml
 import os
-# 导入文件权限状态常量库
 import stat
 
-# 精准计算 DNA 目录的绝对路径：~/Noagent/dna
 DNA_DIR = os.path.dirname(os.path.abspath(__file__))
-# 向上级回溯，完美锚定最新的物理根目录路径：~/Noagent
 WORKSPACE = os.path.dirname(DNA_DIR)
 
-# 动态定义配置文件、别名输出脚本、物理工具流输出脚本的物理路径
 YAML_PATH = os.path.join(DNA_DIR, "receptors.yaml")
 ALIAS_SH_PATH = os.path.join(DNA_DIR, "install_alias.sh")
 PATH_SH_PATH = os.path.join(DNA_DIR, "install_path.sh")
 
 # ========================================================
-#  2. 别名受体挂载（Mode A: Alias 基因重植）
+#  2. 跨异构 Shell 的免疫嗅探
+# ========================================================
+def detect_host_shell() -> str:
+    current_shell = os.environ.get("SHELL", "").lower()
+    if "zsh" in current_shell:
+        return ".zshrc"
+    elif "fish" in current_shell:
+        return ".config/fish/config.fish"
+    else:
+        return ".bashrc"
+
+# ========================================================
+#  3. 别名与函数挂载 (Mode A)
 # ========================================================
 def main():
     if not os.path.exists(YAML_PATH):
@@ -31,62 +38,97 @@ def main():
         data = yaml.safe_load(f)
     
     commands = data.get('commands', {})
+    rc_file_name = detect_host_shell()
     
-    # --- 构建 install_alias.sh 内容 ---
     alias_sh_content = [
         "#!/bin/bash",
-        "# 🧬 [自动生成] 体液受体挂载 (Alias)",
-        "BASHRC=\"$HOME/.bashrc\"",
-        "echo -e \"📝 正在清理并重植 ~/.bashrc 别名基因...\""
+        "# 🧬 [自动生成] 体液受体挂载 (Alias & Smart Router)",
+        f"RC_FILE=\"$HOME/{rc_file_name}\"",
+        f"echo -e \"📝 正在清理并重植 ~/{rc_file_name} 基因...\""
     ]
     
-    # ⚡️ 幂等性清洗：遍历所有受体命令，利用 sed -i 正则匹配强行删除历史残留的同名别名，防止多次安装导致 .bashrc 臃肿过载
-    for cmd_name in commands.keys():
-        alias_sh_content.append(f"sed -i '/alias {cmd_name}=/d' \"$BASHRC\"")
-        
-    # 🧬 逆转录落盘：将 {WORKSPACE} 劫持替换为当前系统的真实绝对路径，并追加写回 ~/.bashrc
+    # ⚡️ 跨平台底层内核防御与旧基因清洗
     for cmd_name, raw_cmd in commands.items():
-        actual_cmd = raw_cmd.replace("{WORKSPACE}", WORKSPACE)
-        alias_sh_content.append(f"echo \"alias {cmd_name}='{actual_cmd}'\" >> \"$BASHRC\"")
+        alias_sh_content.extend([
+            'if [[ "$OSTYPE" == "darwin"* ]]; then',
+            f'    sed -i \'\' \'/alias {cmd_name}=/d\' "$RC_FILE"',
+            f'    sed -i \'\' \'/{cmd_name}() {{/d\' "$RC_FILE"', # 清洗旧的同名路由函数
+            'else',
+            f'    sed -i \'/alias {cmd_name}=/d\' "$RC_FILE"',
+            f'    sed -i \'/{cmd_name}() {{/d\' "$RC_FILE"',
+            'fi'
+        ])
         
-    alias_sh_content.append("echo -e \"✅ Alias 别名挂载成功！\"")
+    # 🧬 动态基因逆转录
+    for cmd_name, raw_cmd in commands.items():
+        if "{SMART_ROUTER}" in raw_cmd:
+            # 智能代偿函数：利用 bash 的逻辑或 (||)。若 sh 脚本报错或不存在，瞬间执行 py 脚本
+            sh_target = os.path.join(DNA_DIR, "noa_cli.sh")
+            py_target = os.path.join(DNA_DIR, "noa_cli.py")
+            func_line = f"{cmd_name}() {{ bash '{sh_target}' \"$@\" || python3 '{py_target}' \"$@\"; }}"
+            alias_sh_content.append(f"echo \"{func_line}\" >> \"$RC_FILE\"")
+        else:
+            actual_cmd = raw_cmd.replace("{WORKSPACE}", WORKSPACE)
+            alias_sh_content.append(f"echo \"alias {cmd_name}='{actual_cmd}'\" >> \"$RC_FILE\"")
+        
+    alias_sh_content.append("echo -e \"✅ Alias 别名与动态路由挂载成功！\"")
+    alias_sh_content.append(f"echo -e \"💡 提示: 若要让受体立即生效，请手动敲击: \\033[1;33msource $RC_FILE\\033[0m\"")
 
     # ========================================================
-    #  3. 物理可执行工具挂载（Mode B: PATH Wrapper 派生）
+    #  4. 物理可执行工具挂载 (Mode B: PATH Wrapper 派生)
     # ========================================================
-    # --- 构建 install_path.sh 内容 ---
     path_sh_content = [
         "#!/bin/bash",
         "# 🔗 [自动生成] 细胞受体挂载 (PATH Wrapper)",
         "LOCAL_BIN=\"$HOME/.local/bin\"",
-        "mkdir -p \"$LOCAL_BIN\""# 确保物理工具箱目录必然存在
+        "mkdir -p \"$LOCAL_BIN\""
     ]
     
     for cmd_name, raw_cmd in commands.items():
-        actual_cmd = raw_cmd.replace("{WORKSPACE}", WORKSPACE)
         target_bin = f"$LOCAL_BIN/{cmd_name}"
-        # ⚡ 极高明的参数透传包装：利用 cat << 'EOF' 生成不解析变量的 Bash 脚本
-        # 末尾追加的 "$@" 是精髓所在！它保证了用户在任意路径输入 noa start --flag 时，后面的所有附加参数和物理参数能够无损透传给底层具体脑区
-        path_sh_content.extend([
-            f"cat << 'EOF' > \"{target_bin}\"",
-            "#!/bin/bash",
-            f"{actual_cmd} \"$@\"",
-            "EOF",
-            f"chmod +x \"{target_bin}\""# 赋予生成的物理包装程序可执行权限
-        ])
+        
+        if "{SMART_ROUTER}" in raw_cmd:
+            # 锻造具备环境嗅探与降级代偿机制的物理 Wrapper
+            sh_target = os.path.join(DNA_DIR, "noa_cli.sh")
+            py_target = os.path.join(DNA_DIR, "noa_cli.py")
+            smart_script = f"""#!/bin/bash
+if [[ "$OSTYPE" == "linux-gnu"* ]] || [[ "$OSTYPE" == "darwin"* ]]; then
+    bash "{sh_target}" "$@" || {{
+        echo -e "\\033[1;33m⚠️ Bash 反射弧执行阻断，已降级至 Python 皮层路由...\\033[0m"
+        python3 "{py_target}" "$@"
+    }}
+else
+    # 纯异构系统兜底
+    python3 "{py_target}" "$@"
+fi
+"""
+            path_sh_content.extend([
+                f"cat << 'EOF' > \"{target_bin}\"",
+                smart_script.strip(),
+                "EOF",
+                f"chmod +x \"{target_bin}\""
+            ])
+        else:
+            actual_cmd = raw_cmd.replace("{WORKSPACE}", WORKSPACE)
+            path_sh_content.extend([
+                f"cat << 'EOF' > \"{target_bin}\"",
+                "#!/bin/bash",
+                f"{actual_cmd} \"$@\"",
+                "EOF",
+                f"chmod +x \"{target_bin}\""
+            ])
     
-    # 检查当前环境变量，若系统中没有 ~/.local/bin，则自动将该受体通道合并进入用户全域 PATH
     path_sh_content.extend([
+        f"RC_FILE=\"$HOME/{rc_file_name}\"",
         "if [[ \":$PATH:\" != *\":$HOME/.local/bin:\"* ]]; then",
-        "    echo 'export PATH=\"$HOME/.local/bin:$PATH\"' >> \"$HOME/.bashrc\"",
+        "    echo 'export PATH=\"$HOME/.local/bin:$PATH\"' >> \"$RC_FILE\"",
         "fi",
-        "echo -e \"✅ 物理 PATH 工具挂载成功！\""
+        "echo -e \"✅ 物理 PATH 工具箱已与宿主融合！\""
     ])
 
     # ========================================================
-    #  4. 物理有丝分裂执行权激活
+    #  5. 执行权激活
     # ========================================================
-    # 1. 物理写入 install_alias.sh 并利用位运算 `| stat.S_IEXEC` 动态追加 `chmod +x` 的操作系统物理执行权限
     with open(ALIAS_SH_PATH, "w", encoding="utf-8") as f:
         f.write("\n".join(alias_sh_content) + "\n")
     os.chmod(ALIAS_SH_PATH, os.stat(ALIAS_SH_PATH).st_mode | stat.S_IEXEC)
@@ -95,7 +137,7 @@ def main():
         f.write("\n".join(path_sh_content) + "\n")
     os.chmod(PATH_SH_PATH, os.stat(PATH_SH_PATH).st_mode | stat.S_IEXEC)
 
-    print(f"✅ [配置解析完成] 已成功同步生成 install_alias.sh 与 install_path.sh")
+    print("✅ [配置解析完成] 已生成具备智能代偿路由的 install_alias.sh 与 install_path.sh")
 
 if __name__ == "__main__":
     main()
