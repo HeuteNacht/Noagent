@@ -7,6 +7,11 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 import uvicorn
 from white_matter.neuron_base import NeuronNode
 from loguru import logger
+# ========================================================
+# 🧬 补全缺失的免疫数据库物理路径
+# ========================================================
+APPROVED_DB = os.path.join(_ROOT, "dna", "approved_devices.json")
+PENDING_DB = os.path.join(_ROOT, "dna", "pending_devices.json")
 
 # 免疫记忆缓存（内存态）
 _APPROVED_CACHE = set()

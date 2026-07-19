@@ -4,27 +4,27 @@ LOCAL_BIN="$HOME/.local/bin"
 mkdir -p "$LOCAL_BIN"
 cat << 'EOF' > "$LOCAL_BIN/noa"
 #!/bin/bash
-bash /home/hashi/noa/dna/noa_cli.sh "$@"
+bash /home/hashi/Noagent/dna/noa_cli.sh "$@"
 EOF
 chmod +x "$LOCAL_BIN/noa"
 cat << 'EOF' > "$LOCAL_BIN/noa-approve"
 #!/bin/bash
-python3 /home/hashi/noa/dna/device_manager.py "$@"
+python3 /home/hashi/Noagent/dna/device_manager.py "$@"
 EOF
 chmod +x "$LOCAL_BIN/noa-approve"
 cat << 'EOF' > "$LOCAL_BIN/noa-log"
 #!/bin/bash
-tail -f /home/hashi/noa/thalamus.log "$@"
+tail -f /home/hashi/Noagent/thalamus.log "$@"
 EOF
 chmod +x "$LOCAL_BIN/noa-log"
 cat << 'EOF' > "$LOCAL_BIN/noa-tui"
 #!/bin/bash
-python3 /home/hashi/noa/dna/local_tui.py "$@"
+python3 /home/hashi/Noagent/dna/local_tui.py "$@"
 EOF
 chmod +x "$LOCAL_BIN/noa-tui"
 cat << 'EOF' > "$LOCAL_BIN/noa-install"
 #!/bin/bash
-bash /home/hashi/noa/dna/install.sh "$@"
+bash /home/hashi/Noagent/dna/install.sh "$@"
 EOF
 chmod +x "$LOCAL_BIN/noa-install"
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then

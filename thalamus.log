@@ -1,16 +1,20 @@
-2026-07-15 10:30:52.414 | INFO     | white_matter.neuron_base:__init__:30 - 🧬 [frontal_lobe] 轴突绑定至: tcp://*:22002
-2026-07-15 10:30:52.415 | INFO     | white_matter.neuron_base:__init__:35 - 🪢 [frontal_lobe] 激活受体: stimulus.raw
-2026-07-15 10:30:52.415 | INFO     | white_matter.neuron_base:__init__:41 - 🔗 [frontal_lobe] 桥接至 sensory_gateway (tcp://127.0.0.1:22001)
-2026-07-15 10:30:52.415 | SUCCESS  | white_matter.neuron_base:listen:49 - 🟢 [frontal_lobe] 脑区激活，潜意识倾听中...
-2026-07-15 10:30:52.428 | INFO     | white_matter.neuron_base:__init__:30 - 🧬 [sensory_gateway] 轴突绑定至: tcp://*:22001
-2026-07-15 10:30:52.469 | SUCCESS  | white_matter.neuron_base:listen:49 - 🟢 [sensory_gateway] 脑区激活，潜意识倾听中...
-2026-07-15 10:30:52.915 | INFO     | white_matter.neuron_base:__init__:30 - 🧬 [effector] 轴突绑定至: tcp://*:22003
-2026-07-15 10:30:52.915 | INFO     | white_matter.neuron_base:__init__:35 - 🪢 [effector] 激活受体: action.execute
-2026-07-15 10:30:52.915 | INFO     | white_matter.neuron_base:__init__:41 - 🔗 [effector] 桥接至 frontal_lobe (tcp://127.0.0.1:22002)
-2026-07-15 10:30:52.916 | SUCCESS  | white_matter.neuron_base:listen:49 - 🟢 [effector] 脑区激活，潜意识倾听中...
-2026-07-15 10:33:05.406 | WARNING  | __main__:websocket_endpoint:55 - ⛔️ [免疫拦截] 发现陌生设备试图接入: ios_tui_2389ea99
-2026-07-15 11:01:45.087 | SUCCESS  | __main__:websocket_endpoint:64 - 🔓 [准入放行] 合法设备: ios_tui_2389ea99
-2026-07-15 11:01:45.088 | DEBUG    | white_matter.neuron_base:fire_signal:46 - ⚡️ [sensory_gateway] 释放 -> stimulus.raw
-2026-07-15 11:01:45.089 | DEBUG    | white_matter.neuron_base:listen:53 - 🧠 [frontal_lobe] 捕捉 <- stimulus.raw
-2026-07-15 11:01:45.089 | INFO     | __main__:process_signal:12 - 🤔 意图解析: [[SYSTEM_HANDSHAKE_PING]]
-2026-07-15 11:01:45.089 | INFO     | __main__:process_signal:18 - 🤷 无需物理行动: [SYSTEM_HANDSHAKE_PING]
+Traceback (most recent call last):
+  File "/home/hashi/Noagent/brain/effector/main.py", line 3, in <module>
+    class Effector(NeuronNode):
+                   ^^^^^^^^^^
+NameError: name 'NeuronNode' is not defined
+2026-07-19 09:29:54.962 | INFO     | white_matter.neuron_base:__init__:30 - 🧬 [sensory_gateway] 轴突绑定至: tcp://*:22001
+/home/hashi/Noagent/brain/sensory_gateway/main.py:61: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+2026-07-19 09:29:54.978 | INFO     | white_matter.neuron_base:__init__:30 - 🧬 [frontal_lobe] 轴突绑定至: tcp://*:22002
+2026-07-19 09:29:54.978 | INFO     | white_matter.neuron_base:__init__:35 - 🪢 [frontal_lobe] 激活受体: stimulus.raw
+2026-07-19 09:29:54.979 | INFO     | white_matter.neuron_base:__init__:41 - 🔗 [frontal_lobe] 桥接至 sensory_gateway (tcp://127.0.0.1:22001)
+2026-07-19 09:29:54.979 | SUCCESS  | white_matter.neuron_base:listen:49 - 🟢 [frontal_lobe] 脑区激活，潜意识倾听中...
+2026-07-19 09:29:55.209 | SUCCESS  | white_matter.neuron_base:listen:49 - 🟢 [sensory_gateway] 脑区激活，潜意识倾听中...
+2026-07-19 09:29:55.210 | INFO     | __main__:init_immune_system:29 - 🛡️ 免疫系统初始化: {'iphone_tui_terminal', 'ios_or_local_tui', 'ios_tui_2389ea99'}
+2026-07-19 09:29:55.211 | SUCCESS  | white_matter.neuron_base:listen:49 - 🟢 [sensory_gateway] 脑区激活，潜意识倾听中...
