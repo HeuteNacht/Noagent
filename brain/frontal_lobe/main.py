@@ -25,7 +25,7 @@ class FrontalLobe(NeuronNode):
             connectome_path=os.path.join(_ROOT_DIR, "dna", "known_nodes.yaml")
         )
         # 监听来自网关的原始刺激信号
-        #self.register_receptor("stimulus.raw")
+        self.register_receptor("stimulus.raw")
         
         # 👈 2. 向上追溯，精准定位物理根目录的 .env 基因锁
         env_path = os.path.join(_ROOT_DIR, '.env')

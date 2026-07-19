@@ -60,6 +60,17 @@ class NeuronNode:
                 logger.info(f"🔗 [{self.identity}] 桥接至 {target} ({addr})")
 
     # ========================================================
+    #  fix bug: 动态受体挂载 (Dynamic Receptor Registration)
+    # ========================================================
+    def register_receptor(self, topic: str):
+        """允许脑区在代码层面动态订阅 ZMQ 频道，而不仅依赖 YAML"""
+        if hasattr(self, 'dendrite'):
+            self.dendrite.setsockopt_string(zmq.SUBSCRIBE, topic)
+            logger.info(f"🪢 [{self.identity}] 动态激活受体: {topic}")
+        else:
+            logger.error(f"❌ 无法为 {self.identity} 激活受体 {topic}: 树突网络尚未建立。")
+
+    # ========================================================
     #  4. 动作电位释放 (支持全链路追踪)
     # ========================================================
     async def fire_signal(self, topic: str, payload: dict, trace_id: str = None):
