@@ -5,7 +5,7 @@ Noa 是一个基于“神经科学底层原理”构建的分布式、去中心�
 ## 📂 基因图谱 (Directory Structure)
 
 ```text
-~/noa/
+~/Noagent/
 ├── README.md                     # 项目文档
 ├── main.py                       # 脑干起搏器 (一键拉起所有脑区子进程)
 ├── requirements.txt              # 营养液依赖包
@@ -46,10 +46,10 @@ Noa 完美支持通过 iOS 端的 Pythonista 3 应用进行远程异地接入（
 2. 沉浸式控制台 (⁠tui_noa.py⁠)：在 iPhone 端呈现黑客风命令提示符。支持长连接心跳保活、隐式静默握手检测，以及异常状态的智能捕获。
 🔌 开发者热拔插指南 (Hot-plug Guide)
 1. 新增终端命令 (CLI Tool)
-1. 编辑 ⁠~/noa/dna/receptors.yaml⁠ 添加你的快捷指令与执行路径。
-2. （可选）编辑 ⁠~/noa/dna/noa_cli.sh⁠ 添加子命令路由分支。
+1. 编辑 ⁠~/Noagent/dna/receptors.yaml⁠ 添加你的快捷指令与执行路径。
+2. （可选）编辑 ⁠~/Noagent/dna/noa_cli.sh⁠ 添加子命令路由分支。
 3. 终端执行 ⁠noa install⁠，瞬间生效。
 2. 培育新脑区 (New Brain Region)
-1. 在 ⁠~/noa/brain/⁠ 下新建文件夹（如 ⁠amygdala/⁠）。
+1. 在 ⁠~/Noagent/brain/⁠ 下新建文件夹（如 ⁠amygdala/⁠）。
 2. 创建 ⁠synapse.yaml⁠ 声明你需要监听的 ⁠subscriptions⁠ (上游信号) 以及 ⁠listen_to_nodes⁠ (全局黄页注册的节点)。
 3. 继承 ⁠NeuronNode⁠ 编写几行 Python 处理逻辑，启动该进程即可自动汇入主神经网络。完全无需修改已有系统的任何代码。
