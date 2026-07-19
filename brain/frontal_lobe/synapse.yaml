@@ -1,3 +1,4 @@
+#Noagent/brain/frontal_lobe/synapse.yaml
 identity: frontal_lobe
 listen_to_nodes:
   - sensory_gateway

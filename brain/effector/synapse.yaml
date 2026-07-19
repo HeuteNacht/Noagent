@@ -1,3 +1,4 @@
+#Noagent/brain/effector/synapse.yaml
 identity: effector
 listen_to_nodes:
   - frontal_lobe

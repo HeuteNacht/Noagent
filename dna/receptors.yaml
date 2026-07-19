@@ -1,7 +1,13 @@
 # 🧬 Noa 命令行受体图谱 (支持热拔插)
+#Noagent/dna/receptors.yaml
 commands:
+  # 系统的核心路由器网关，负责启动/停止整个脑区集群。物理映射到 shell 路由分支脚本。
   noa: "bash {WORKSPACE}/dna/noa_cli.sh"
+  # 免疫系统准入终端。映射到我们上一节解析的 device_manager.py，用于放行未知探针。
   noa-approve: "python3 {WORKSPACE}/dna/device_manager.py"
+  # 全链路日志流监控。利用 tail -f 实时挂起追踪丘脑网关（thalamus）的运行与拦截日志。
   noa-log: "tail -f {WORKSPACE}/thalamus.log"
+  # 本地超级终端。映射到我们解析过的长连接 TUI，用于直接与 Grok 慢思考皮层进行交互。
   noa-tui: "python3 {WORKSPACE}/dna/local_tui.py"
+  # 核心有丝分裂流水线。负责读取本配置文件，并将其动态“逆转录”部署到操作系统的物理脚本。
   noa-install: "bash {WORKSPACE}/dna/install.sh"
