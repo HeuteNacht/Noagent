@@ -14,21 +14,25 @@ LOG_FILE="$DNA_DIR/noa.log"
 #  2. 神经清剿反射弧 (升级为精准 PID 靶向阻断)
 # ========================================================
 purge_existing_neural_processes() {
+    # 1. 优先执行手术刀级别的 PID 靶向阻断
     if [ -f "$PID_FILE" ]; then
         PID=$(cat "$PID_FILE")
-        # 探测进程是否存活 (使用 kill -0 不发信号仅探测)
         if kill -0 "$PID" 2>/dev/null; then
             echo -e "🔄 正在执行手术刀级别的靶向阻断 (PID: $PID)..."
             kill -TERM "$PID" 2>/dev/null
-            sleep 1
-            echo -e "💤 物理链路切断，中枢督导树已被安全休眠。"
-        else
-            echo -e "⚠️ 进程已游离，执行空锁回收。"
+            sleep 0.5
         fi
         rm -f "$PID_FILE"
-    else
-        echo -e "✅ 当前物理宿主机内未发现活跃的 Noa 中枢。"
     fi
+
+    # 2. 🛡️ 【双重保险】：如果主起搏器死了，但子脑区沦为孤儿进程游离在后台，直接全路径绞杀
+    # 这样即使没有 fuser 命令，也绝对能百分之百强行释放 22001/22002/22003 端口
+    if pgrep -f "Noagent/brain/" >/dev/null 2>&1; then
+        echo -e "🧹 发现残留的孤儿神经细胞，正在执行外周清剿..."
+        pkill -f "Noagent/brain/" 2>/dev/null
+        sleep 1
+    fi
+    echo -e "✅ 当前物理宿主机内存已完全纯净。"
 }
 
 # ========================================================

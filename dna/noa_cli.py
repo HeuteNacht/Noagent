@@ -97,6 +97,11 @@ def start_system():
     main_script = os.path.join(WORKSPACE, "main.py")
     log_fd = open(LOG_FILE, "a", encoding="utf-8")
     
+    # 🎯 【核心修复】：强行克隆当前环境，并注入全局 UTF-8 运行时控制变量
+    # 这将强制所有后台派生的 Python 子脑区原生输出 UTF-8 字节，彻底杜绝 GBK 乱码
+    win_env = os.environ.copy()
+    win_env["PYTHONUTF8"] = "1"
+    
     # 跨平台的守护进程脱壳技术
     if sys.platform == "win32":
         # Windows API: DETACHED_PROCESS (0x00000008)，使进程彻底脱离当前 VSCodium 控制台后台运行
