@@ -31,6 +31,10 @@ class FrontalLobe(NeuronNode):
             logger.info("🔐 已成功解析局部 .env 基因保险箱。")
         
         self.api_key = os.environ.get("GROK_API_KEY") or os.environ.get("XAI_API_KEY")
+
+        # 👇 [新增] 突触路径记忆体
+        self.route_memory_path = os.path.join(os.path.dirname(__file__), ".synapse_route.cache")
+
         if not self.api_key:
             logger.warning("⚠️ 缺失 GROK_API_KEY / XAI_API_KEY 凭证，认知皮层将被物理切断！")
 
@@ -67,6 +71,7 @@ class FrontalLobe(NeuronNode):
     async def _adaptive_routing_request(self, url: str, headers: dict, data: dict) -> dict:
         env_proxy = os.environ.get("NOA_PROXY") or os.environ.get("HTTP_PROXY") or os.environ.get("http_proxy")
         
+        # 1. 基础物理突触库
         strategies = []
         if env_proxy:
             strategies.append(("Env Proxy", env_proxy))
@@ -77,6 +82,7 @@ class FrontalLobe(NeuronNode):
             ("Direct Mode", None)
         ])
 
+        # 去重
         seen = set()
         unique_strategies = []
         for name, proxy in strategies:
@@ -84,37 +90,59 @@ class FrontalLobe(NeuronNode):
                 seen.add(proxy)
                 unique_strategies.append((name, proxy))
 
+        # 2. 🧠 突触记忆重组 (读取上次成功的路径并提权置顶)
+        preferred_route = None
+        if os.path.exists(self.route_memory_path):
+            try:
+                with open(self.route_memory_path, 'r') as f:
+                    preferred_route = f.read().strip()
+            except Exception:
+                pass
+                
+        if preferred_route:
+            # 找到记忆中的通路，强行把它提到优先级第一位
+            for i, (name, proxy) in enumerate(unique_strategies):
+                if name == preferred_route:
+                    unique_strategies.insert(0, unique_strategies.pop(i))
+                    break
+
+        # 3. 动态折跃与记忆烙印
         for name, proxy_url in unique_strategies:
-            logger.debug(f"  ↳ 尝试激活路由策略 [{name}] ...")
+            prefix = "🌟 [记忆优先]" if name == preferred_route else "↳ [常规轮询]"
+            logger.debug(f"  {prefix} 尝试激活路由策略 [{name}] ...")
             try:
                 if proxy_url and "socks" in proxy_url.lower():
                     from aiohttp_socks import ProxyConnector
                     connector = ProxyConnector.from_url(proxy_url)
                     async with aiohttp.ClientSession(connector=connector) as session:
-                        async with session.post(url, headers=headers, json=data, timeout=6.0) as response:
+                        async with session.post(url, headers=headers, json=data, timeout=30.0) as response:
                             if response.status == 200:
+                                # 👇 [新增] 折跃成功，烙印记忆！
+                                with open(self.route_memory_path, 'w') as f:
+                                    f.write(name)
                                 return await response.json()
-                            # 👇 [新增] 非 200 状态码直接剥离抛出，拒绝由于静默失败导致跌落至连接超时错误
                             else:
                                 err = await response.text()
                                 raise RuntimeError(f"API HTTP {response.status}: {err}")
                 else:
                     async with aiohttp.ClientSession(trust_env=True) as session:
-                        async with session.post(url, headers=headers, json=data, proxy=proxy_url, timeout=6.0) as response:
+                        async with session.post(url, headers=headers, json=data, proxy=proxy_url, timeout=30.0) as response:
                             if response.status == 200:
+                                # 👇 [新增] 折跃成功，烙印记忆！
+                                with open(self.route_memory_path, 'w') as f:
+                                    f.write(name)
                                 return await response.json()
-                            # 👇 [新增] 同样剥离抛出业务层逻辑阻断
                             else:
                                 err = await response.text()
                                 raise RuntimeError(f"API HTTP {response.status}: {err}")
-            # 👇 [新增] 让明确的业务层逻辑阻断强行穿透阻断链，不被底层的 Exception 吞掉
             except RuntimeError as re:
                 raise re
             except Exception as e:
-                logger.debug(f"  ↳ 策略 [{name}] 折跃失败: {type(e).__name__}")
+                logger.debug(f"  💥 策略 [{name}] 折跃失败: {type(e).__name__}")
                 continue
                 
         raise ConnectionError("所有网络突触路由均宣告折跃失败。")
+
 
     async def _grok_cognitive_process(self, user_input: str) -> str:
         if not self.api_key:
