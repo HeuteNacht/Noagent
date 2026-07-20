@@ -62,15 +62,35 @@ echo -e "\033[1;32m🟢 已成功切入隔离细胞核环境 (base)！使用的 
 # ========================================================
 
 
-# evolve 1: 营养液依赖包自动灌溉机制 (requirements.txt 联动)
-#演进可能性：可以在主控 install.sh 的第 1 步之前，直接追加一行 Python 环境自检与依赖自动灌溉逻辑。
+# evolve 1: 营养液依赖包自动灌溉机制 (PEP 668 环境自适应版)
 if [ -f "$WORKSPACE/requirements.txt" ]; then
-    echo "🧪 正在注入营养液依赖包 (pip install)..."
-    pip3 install -r "$WORKSPACE/requirements.txt" --quiet
+    echo "🧪 正在检测神经元环境健康状态..."
+    
+    # 尝试检测环境是否受限
+    if pip3 install --dry-run . > /dev/null 2>&1; then
+        echo "🧪 系统环境自由，开始直接灌溉..."
+        pip3 install -r "$WORKSPACE/requirements.txt" --quiet
+    else
+        echo "🧪 侦测到受限环境 (PEP 668)，正在本地构建虚拟神经元环境..."
+        VENV_DIR="$WORKSPACE/.venv"
+        python3 -m venv "$VENV_DIR"
+        source "$VENV_DIR/bin/activate"
+        pip install -r "$WORKSPACE/requirements.txt" --quiet
+        
+        # 补丁：将激活后的 python 路径强制注入后续逻辑
+        PYTHON_EXEC="$VENV_DIR/bin/python3"
+        export NOA_PYTHON="$PYTHON_EXEC"
+        echo "✅ 虚拟环境构建完毕，当前路由路径已重定向。"
+    fi
 fi
 
-# 1. 唤醒 Python 逆转录引擎，去解析 receptors.yaml 蓝图并自动生成上面那两个物理 .sh 脚本
-python3 "$DNA_DIR/sync_receptors.py"
+# 1. 唤醒 Python 逆转录引擎 (如果存在虚拟环境，使用指定的路径)
+if [ -z "$NOA_PYTHON" ]; then
+    python3 "$DNA_DIR/sync_receptors.py"
+else
+    "$NOA_PYTHON" "$DNA_DIR/sync_receptors.py"
+fi
+
 
 # 2. 严格的基因完整性检查：如果发现那两个脚本没有被成功有丝分裂出来，立刻报警并强制阻断退出，防止破坏系统既有的环境变量
 if [ ! -f "$DNA_DIR/install_alias.sh" ] || [ ! -f "$DNA_DIR/install_path.sh" ]; then
