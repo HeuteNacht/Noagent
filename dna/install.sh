@@ -12,6 +12,56 @@ echo -e "🧬 \033[1;32mNoa 突触重构开始 (动态受体挂载引擎)...\033
 echo -e "\033[1;34m=============================================================\033[0m"
 
 
+# ========================================================
+# 👇 [新增模块开始] 异构环境嗅探与 Miniconda 独立细胞核自动部署
+# ========================================================
+OS_TYPE=$(uname -s)
+ARCH_TYPE=$(uname -m)
+CONDA_DIR="$HOME/miniconda3"
+
+if ! command -v conda &> /dev/null; then
+    if [ -d "$CONDA_DIR" ]; then
+        echo -e "\033[1;33m⚠️ 发现残留的 Miniconda 躯壳，但未激活。正在尝试强行唤醒...\033[0m"
+    else
+        echo -e "\033[1;33m⬇️ 侦测到原生 Linux 裸机环境 (防备 PEP 668 封锁)。\033[0m"
+        echo -e "\033[1;32m📦 正在为你全自动下载并植入 Miniconda 独立细胞环境...\033[0m"
+        
+        if [ "$OS_TYPE" == "Linux" ]; then
+            if [ "$ARCH_TYPE" == "x86_64" ]; then
+                MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
+            elif [ "$ARCH_TYPE" == "aarch64" ]; then
+                MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh"
+            fi
+        elif [ "$OS_TYPE" == "Darwin" ]; then
+            if [ "$ARCH_TYPE" == "arm64" ]; then
+                MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh"
+            else
+                MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh"
+            fi
+        fi
+
+        wget -q --show-progress "$MINICONDA_URL" -O /tmp/miniconda.sh
+        bash /tmp/miniconda.sh -b -p "$CONDA_DIR"
+        rm -f /tmp/miniconda.sh
+        echo -e "\033[1;32m✅ Miniconda 物理躯壳植入完成！\033[0m"
+    fi
+    source "$CONDA_DIR/etc/profile.d/conda.sh"
+else
+    echo -e "\033[1;32m✅ Miniconda 突触节点已在线。\033[0m"
+    CONDA_BASE=$(conda info --base)
+    source "$CONDA_BASE/etc/profile.d/conda.sh"
+fi
+
+echo -e "\033[1;36m🔄 正在将 base 环境固化为系统默认反射弧...\033[0m"
+conda init bash > /dev/null
+conda config --set auto_activate_base true
+conda activate base
+echo -e "\033[1;32m🟢 已成功切入隔离细胞核环境 (base)！使用的 Python: $(which python3)\033[0m"
+# ========================================================
+# 👆 [新增模块结束]
+# ========================================================
+
+
 # evolve 1: 营养液依赖包自动灌溉机制 (requirements.txt 联动)
 #演进可能性：可以在主控 install.sh 的第 1 步之前，直接追加一行 Python 环境自检与依赖自动灌溉逻辑。
 if [ -f "$WORKSPACE/requirements.txt" ]; then

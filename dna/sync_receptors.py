@@ -6,6 +6,8 @@
 import yaml
 import os
 import stat
+import sys
+import subprocess
 
 DNA_DIR = os.path.dirname(os.path.abspath(__file__))
 WORKSPACE = os.path.dirname(DNA_DIR)
@@ -27,9 +29,42 @@ def detect_host_shell() -> str:
         return ".bashrc"
 
 # ========================================================
+# 🧬 新增：神经受体环境自适应进化引擎
+# ========================================================
+def auto_inject_dependencies():
+    req_file = os.path.join(WORKSPACE, "requirements.txt")
+    print(f"\033[1;34m=============================================================\033[0m")
+    print(f"\033[1;32m🧬 Noa 神经受体环境进化引擎启动...\033[0m")
+    print(f"\033[1;34m=============================================================\033[0m")
+
+    if not os.path.exists(req_file):
+        print(f"\033[1;31m❌ 熔断异常: 未在根目录发现 requirements.txt\033[0m")
+        return
+
+    print(f"📦 正在通过当前物理环境 [{sys.executable}] 补全依赖...")
+    cmd = [sys.executable, "-m", "pip", "install", "-r", req_file]
+    
+    try:
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+        for line in process.stdout:
+            print(f"  ↳ {line.strip()}")
+        process.wait()
+        if process.returncode == 0:
+            print(f"\033[1;32m🎉 [环境觉醒] 所有神经依赖（含 aiohttp-socks）已成功激活！\033[0m")
+        else:
+            print(f"\033[1;31m❌ 进化受挫: pip 执行异常，退出码: {process.returncode}\033[0m")
+    except Exception as e:
+        print(f"\033[1;31m💥 突触进化发生物理崩溃: {e}\033[0m")
+    print(f"\033[1;34m=============================================================\033[0m\n")
+
+
+# ========================================================
 #  3. 别名与函数挂载 (Mode A)
 # ========================================================
 def main():
+    # 🎯 新增：优先触发底层依赖环境静默进化，确保 aiohttp-socks 落盘
+    auto_inject_dependencies()
+
     if not os.path.exists(YAML_PATH):
         print("❌ 未找到受体配置文件 receptors.yaml")
         return
