@@ -1,31 +1,40 @@
 #!/bin/bash
-# 🧬 [自动生成] 体液受体挂载 (Alias & Smart Router)
-RC_FILE="$HOME/.bashrc"
+# 路径：~/Noagent/dna/install_alias.sh
+# 职责：清理残骸并重植 ~/.bashrc 动态路由基因
+
 DNA_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 WORKSPACE=$(dirname "$DNA_DIR")
+RC_FILE="$HOME/.bashrc"
 
-echo -e "📝 正在清理并重植 ~/.bashrc 基因..."
+echo -e "📝 正在清理并重植 ~/.bashrc 动态路由基因 (Alias)..."
 
-# 清理旧有的别名和函数定义
+# 1. 精准清剿旧的致病基因
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' '/alias noa=/d; /noa() {/,/}/d; /alias noa-/d' "$RC_FILE"
+    sed -i '' '/# Noagent Bionic Aliases/,$d' "$RC_FILE"
 else
-    sed -i '/alias noa=/d; /noa() {/,/}/d; /alias noa-/d' "$RC_FILE"
+    sed -i '/# Noagent Bionic Aliases/,$d' "$RC_FILE"
+    sed -i '/alias noa/d' "$RC_FILE"
+    sed -i '/noa() {/d' "$RC_FILE"
 fi
 
-# 🧬 使用 EOF 动态注入，完美规避引号冲突，并动态适配当前用户路径
-cat << EOF >> "$RC_FILE"
-
-# >>> noa initialize >>>
+# 2. 纯净态基因注入 (使用单引号 'EOF' 完美冻结 "$@"，防止执行时被展开)
+cat << 'EOF' >> "$RC_FILE"
+# Noagent Bionic Aliases
 noa() {
-    bash '$DNA_DIR/noa_cli.sh' "\$@"
+    bash 'NOA_DIR_PLACEHOLDER/noa_cli.sh' "$@" || python3 'NOA_DIR_PLACEHOLDER/noa_cli.py' "$@"
 }
-alias noa-approve='python3 $DNA_DIR/device_manager.py'
-alias noa-log='tail -f $DNA_DIR/noa.log'
-alias noa-tui='python3 $DNA_DIR/local_tui.py'
-alias noa-install='python3 $DNA_DIR/sync_receptors.py'
-# <<< noa initialize <<<
+alias noa-tui='python3 NOA_DIR_PLACEHOLDER/local_tui.py'
+alias noa-log='tail -f WORKSPACE_PLACEHOLDER/thalamus.log'
+alias noa-approve='python3 NOA_DIR_PLACEHOLDER/device_manager.py'
 EOF
 
+# 3. 手术刀式路径填补
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "s|NOA_DIR_PLACEHOLDER|$DNA_DIR|g" "$RC_FILE"
+    sed -i '' "s|WORKSPACE_PLACEHOLDER|$WORKSPACE|g" "$RC_FILE"
+else
+    sed -i "s|NOA_DIR_PLACEHOLDER|$DNA_DIR|g" "$RC_FILE"
+    sed -i "s|WORKSPACE_PLACEHOLDER|$WORKSPACE|g" "$RC_FILE"
+fi
+
 echo -e "✅ Alias 别名与动态路由挂载成功！"
-echo -e "💡 提示: 若要让受体立即生效，请手动敲击: \033[1;33msource $RC_FILE\033[0m"
