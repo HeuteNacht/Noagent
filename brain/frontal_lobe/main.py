@@ -94,11 +94,22 @@ class FrontalLobe(NeuronNode):
                         async with session.post(url, headers=headers, json=data, timeout=6.0) as response:
                             if response.status == 200:
                                 return await response.json()
+                            # 👇 [新增] 非 200 状态码直接剥离抛出，拒绝由于静默失败导致跌落至连接超时错误
+                            else:
+                                err = await response.text()
+                                raise RuntimeError(f"API HTTP {response.status}: {err}")
                 else:
                     async with aiohttp.ClientSession(trust_env=True) as session:
                         async with session.post(url, headers=headers, json=data, proxy=proxy_url, timeout=6.0) as response:
                             if response.status == 200:
                                 return await response.json()
+                            # 👇 [新增] 同样剥离抛出业务层逻辑阻断
+                            else:
+                                err = await response.text()
+                                raise RuntimeError(f"API HTTP {response.status}: {err}")
+            # 👇 [新增] 让明确的业务层逻辑阻断强行穿透阻断链，不被底层的 Exception 吞掉
+            except RuntimeError as re:
+                raise re
             except Exception as e:
                 logger.debug(f"  ↳ 策略 [{name}] 折跃失败: {type(e).__name__}")
                 continue
@@ -122,7 +133,7 @@ class FrontalLobe(NeuronNode):
         )
 
         data = {
-            "model": "grok-beta", 
+            "model": "grok-latest", # 👇 [修改] 丢弃已失效的测试基因 grok-beta，更迭为动态最新主流别名
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_input}
@@ -138,6 +149,10 @@ class FrontalLobe(NeuronNode):
             logger.success("✅ 云端皮层计算完毕，神经冲动已顺畅回流！")
             return reply
             
+        # 👇 [新增] 精准捕获业务级逻辑异常（如错误的密钥或参数污染），直接将真实原因原路扔给客户端
+        except RuntimeError as e:
+            logger.error(f"❌ 大模型逻辑屏障: {e}")
+            return f"⚠️ 认知皮层遇到逻辑屏障: {e}"
         except ConnectionError:
             logger.error("❌ 大模型中枢断裂: 所有代理与直连通道均超时。")
             return "⏳ 认知超时：Grok 突触在超空间折跃失败，请检查边缘网络结界。"
