@@ -3,7 +3,7 @@
 # ========================================================
 #  1. 环境初始化与依赖导入
 # ========================================================
-import os, sys, asyncio, json
+import os, sys, asyncio, json, shutil
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 if _ROOT not in sys.path: sys.path.insert(0, _ROOT)
 
@@ -21,6 +21,7 @@ if sys.platform == "win32":
 #  2. 免疫系统与突触池定义
 # ========================================================
 APPROVED_DB = os.path.join(_ROOT, "dna", "approved_devices.json")
+APPROVED_TEMPLATE = os.path.join(_ROOT, "dna", "approved_devices.json.example")
 PENDING_DB = os.path.join(_ROOT, "dna", "pending_devices.json")
 
 _APPROVED_CACHE = set()
@@ -55,6 +56,15 @@ manager = ConnectionManager()
 # ========================================================
 def init_immune_system():
     global _APPROVED_CACHE, _PENDING_CACHE
+    
+    # 🧬 [基因表达代偿] 若缺少显性抗原序列，强行从原始 DNA 模板转录出基础免疫库
+    if not os.path.exists(APPROVED_DB):
+        if os.path.exists(APPROVED_TEMPLATE):
+            shutil.copy(APPROVED_TEMPLATE, APPROVED_DB)
+            logger.info("🧬 [基因转录] 未检测到物理免疫库，已从原始 DNA 模板逆转录白名单！")
+        else:
+            logger.warning("⚠️ [免疫缺陷] 未找到模板文件 approved_devices.json.example，白名单初始化可能受阻。")
+
     if os.path.exists(APPROVED_DB):
         with open(APPROVED_DB, 'r') as f:
             _APPROVED_CACHE = set(json.load(f))

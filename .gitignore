@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --------------------------------------------------
+# 本地动态运行时配置与缓存 (避免多端同步冲突)
+# --------------------------------------------------
+dna/approved_devices.json
+.synapse_route.cache
+*.cache
