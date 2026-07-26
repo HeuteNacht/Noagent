@@ -54,6 +54,7 @@ manager = ConnectionManager()
 # ========================================================
 #  3. 免疫机制核心函数
 # ========================================================
+
 def init_immune_system():
     global _APPROVED_CACHE, _PENDING_CACHE
     
@@ -65,12 +66,25 @@ def init_immune_system():
         else:
             logger.warning("⚠️ [免疫缺陷] 未找到模板文件 approved_devices.json.example，白名单初始化可能受阻。")
 
+    # 🛡️ [DNA 序列自愈保护] 防止 JSON 格式损坏导致网关崩溃
     if os.path.exists(APPROVED_DB):
-        with open(APPROVED_DB, 'r') as f:
-            _APPROVED_CACHE = set(json.load(f))
+        try:
+            with open(APPROVED_DB, 'r') as f:
+                _APPROVED_CACHE = set(json.load(f))
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.error(f"🚨 [DNA 序列变异] approved_devices.json 语法损坏 ({e})！正在自动从模板自愈重置...")
+            if os.path.exists(APPROVED_TEMPLATE):
+                shutil.copy(APPROVED_TEMPLATE, APPROVED_DB)
+                with open(APPROVED_DB, 'r') as f:
+                    _APPROVED_CACHE = set(json.load(f))
+
     if os.path.exists(PENDING_DB):
-        with open(PENDING_DB, 'r') as f:
-            _PENDING_CACHE = set(json.load(f))
+        try:
+            with open(PENDING_DB, 'r') as f:
+                _PENDING_CACHE = set(json.load(f))
+        except (json.JSONDecodeError, ValueError):
+            _PENDING_CACHE = set()
+
     logger.info(f"🛡️ 免疫系统初始化: {_APPROVED_CACHE}")
 
 def sync_pending_to_disk():
