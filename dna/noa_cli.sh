@@ -71,6 +71,13 @@ case "$CMD" in
     install|evolve)
         python3 "$DNA_DIR/sync_receptors.py"
         ;;
+    add)
+        if [ "$2" == "cortex" ]; then
+            python3 "$DNA_DIR/cortex_manager.py"
+        else
+            echo -e "⚠️ 基因指令错误。预期用法: noa add cortex"
+        fi
+        ;;
     *)
         echo -e "\033[1;32m🧠 Noa ZMQ Bionic AI System (Dual-Track Bash)\033[0m"
         echo "  noa start     - 唤醒集群 (极速后台启动)"
@@ -79,5 +86,6 @@ case "$CMD" in
         echo "  noa approve   - 🛡️ 审批外部设备接入"
         echo "  noa log       - 📜 追踪系统底层日志"
         echo "  noa install   - 🧬 重构受体环境"
+        echo "  noa add cortex- 🧬 交互式重组皮层基因图谱"
         ;;
 esac

@@ -4,16 +4,24 @@
 
 import os
 import sys
-import json
-import asyncio
-import aiohttp
+import yaml
+import pkgutil
+import importlib
 from loguru import logger
 
-_ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# ========================================================
+#  1. 环境初始化与路径挂载 (同时包含根目录与当前脑区目录)
+# ========================================================
+_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+_ROOT_DIR = os.path.dirname(os.path.dirname(_CURRENT_DIR))
+
+# 🎯 必须同时挂载当前脑区路径，否则 importlib 无法识别 cortex 包
+if _CURRENT_DIR not in sys.path:
+    sys.path.insert(0, _CURRENT_DIR)
 if _ROOT_DIR not in sys.path:
     sys.path.insert(0, _ROOT_DIR)
 
-from dotenv import load_dotenv
+
 from white_matter.neuron_base import NeuronNode
 
 class FrontalLobe(NeuronNode):
@@ -24,169 +32,117 @@ class FrontalLobe(NeuronNode):
         )
         
         self.register_receptor("stimulus.raw")
-        
-        env_path = os.path.join(_ROOT_DIR, '.env')
-        if os.path.exists(env_path):
-            load_dotenv(env_path)
-            logger.info("🔐 已成功解析局部 .env 基因保险箱。")
-        
-        self.api_key = os.environ.get("GROK_API_KEY") or os.environ.get("XAI_API_KEY")
+        self.active_cortex_areas = []
+        self._neurogenesis()  # 触发皮层发育与挂载
 
-        # 👇 [新增] 突触路径记忆体
-        self.route_memory_path = os.path.join(os.path.dirname(__file__), ".synapse_route.cache")
+    def _neurogenesis(self):
+        """🧬 双重保险神经发生：基于 YAML 基因图谱与动态物理目录扫描"""
+        config_path = os.path.join(os.path.dirname(__file__), "cortex_config.yaml")
+        cortex_map = {}
+        
+        # ==========================================
+        #  防线 1：解析 YAML 基因图谱 (强制小写容错)
+        # ==========================================
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config_data = yaml.safe_load(f) or {}
+                    for area in config_data.get("functional_areas", []) or config_data.get("Functional_areas", []):
+                        # 强转小写，防止 YAML 填写不规范
+                        cortex_map[area.get("name").lower()] = area.get("enabled", False)
+                logger.info(f"📄 已成功读取 cortex_config.yaml (读取到 {len(cortex_map)} 个基因锁配置)。")
+            except Exception as e:
+                logger.error(f"❌ 解析 config.yaml 失败 ({e})，将回退至纯自动发现模式。")
+        else:
+            logger.warning("⚠️ 缺失 cortex_config.yaml，系统将默认放行所有物理发现的脑区。")
 
-        if not self.api_key:
-            logger.warning("⚠️ 缺失 GROK_API_KEY / XAI_API_KEY 凭证，认知皮层将被物理切断！")
+        # ==========================================
+        #  防线 2：物理扫描与双重校验挂载
+        # ==========================================
+        cortex_path = os.path.join(os.path.dirname(__file__), "cortex")
+        if not os.path.exists(cortex_path):
+            os.makedirs(cortex_path, exist_ok=True)
+            
+        logger.info(f"🧠 正在扫描并重组前额叶皮层拓扑 (扫描路径: {cortex_path}) ...")
+        
+        found_any = False
+        # 遍历 cortex 目录下的所有 .py 模块
+        for _, module_name, _ in pkgutil.iter_modules([cortex_path]):
+            found_any = True
+            mod_name_lower = module_name.lower()
+            
+            # ⭐️ 双重保险阻断：图谱中明确标记为 false 的脑区，直接物理绞杀！
+            if mod_name_lower in cortex_map and cortex_map[mod_name_lower] is False:
+                logger.warning(f"  ⛔ [基因锁阻断] 脑区已被配置禁用，跳过挂载: {module_name}")
+                continue
+                
+            try:
+                # 动态导入模块
+                mod = importlib.import_module(f"cortex.{module_name}")
+                
+                # 触发子程序的唤醒钩子
+                if hasattr(mod, 'awaken'):
+                    mod.awaken(_ROOT_DIR, os.path.dirname(__file__))
+                
+                self.active_cortex_areas.append(mod)
+                
+                if mod_name_lower in cortex_map:
+                    logger.success(f"  ↳ [图谱授权] 成功挂载脑区: {module_name}")
+                else:
+                    logger.success(f"  ↳ [野生突变] 自动发现并激活未注册脑区: {module_name}")
+                    
+            except BaseException as e:  # 🚨 升级为 BaseException 拦截一切语法/导入级崩溃！
+                logger.error(f"  ❌ 脑区挂载崩溃 [{module_name}]: {type(e).__name__} -> {e}")
+
+        if not found_any:
+            logger.warning("⚠️ cortex 目录下没有扫描到任何有效的 .py 文件！请确保该目录下包含 '__init__.py' 且有代码文件。")
 
     async def process_signal(self, topic: str, message: dict):
+        """
+        网关调度总线：遍历所有激活的脑区，由脑区自行决定是否处理。
+        接收到脑区返回的标准 API 字典后，向外发射 ZMQ 信号。
+        """
         payload = message.get("payload", {})
-        
         trace_id = message.get("trace_id", "unknown")
         client_id = payload.get("client_id", "unknown")
         content = payload.get("content", "").strip()
 
-        logger.info(f"🤔 意图解析 (Trace: {trace_id} | Client: {client_id}): {content}")
+        if not content: return
         
-        if not content:
-            return
+        # 🚨 终极探针加入：这行代码会原形毕露地打印出 Siri 到底传了什么怪东西！
+        logger.info(f"⚡ 刺激截获 (Trace: {trace_id} | Client: {client_id}) 载荷分析: [{content}]")
 
-        if content == "[[SYSTEM_HANDSHAKE_PING]]":
-            logger.info("⚡ 触发本地反射弧：无感处理心跳握手。")
-            await self.fire_signal("stimulus.response", {
-                "trace_id": trace_id,
-                "client_id": client_id,
-                "reply": "Noa 中枢前额叶已就绪。神经递质传输畅通。"
-            })
-            return
+        # 构建给子程序分析的标准输入载荷
+        internal_request = {
+            "trace_id": trace_id,
+            "client_id": client_id,
+            "content": content
+        }
 
-        logger.info("🌀 激活 Grok 云端皮层进行深度思考...")
-        reply = await self._grok_cognitive_process(content)
-        
+        # 沿着皮层链路寻找对应的功能区 (先入为主，找到即中止)
+        for area in self.active_cortex_areas:
+            # 1. 询问该皮层是否接管此信号
+            if await area.can_process(internal_request):
+                # 获取子程序自定义的插件名称，如果没定义则用模块名
+                plugin_name = getattr(area, "PLUGIN_NAME", area.__name__)
+                logger.debug(f"  ↳ 信号已分配至: [{plugin_name}]")
+                
+                # 2. 执行逻辑并获取标准内部 API 响应
+                internal_response = await area.process(internal_request)
+                
+                # 3. 额叶网关执行 ZMQ 跨节点通信交互
+                if internal_response and internal_response.get("status") == "success":
+                    outbound_topic = internal_response.get("target_topic", "stimulus.response")
+                    await self.fire_signal(outbound_topic, internal_response.get("payload"))
+                return
+
+        # 若无任何脑区接管
+        logger.warning("⚠️ 神经回路短路：所有脑区均拒绝处理该指令。")
         await self.fire_signal("stimulus.response", {
             "trace_id": trace_id,
             "client_id": client_id,
-            "reply": reply
+            "reply": "⚠️ 额叶皮层受损或功能缺失：无法处理该指令。"
         })
-
-    async def _adaptive_routing_request(self, url: str, headers: dict, data: dict) -> dict:
-        env_proxy = os.environ.get("NOA_PROXY") or os.environ.get("HTTP_PROXY") or os.environ.get("http_proxy")
-        
-        # 1. 基础物理突触库
-        strategies = []
-        if env_proxy:
-            strategies.append(("Env Proxy", env_proxy))
-            
-        strategies.extend([
-            ("X-ray Socks5", "socks5://127.0.0.1:10808"),
-            ("X-ray HTTP", "http://127.0.0.1:10809"),
-            ("Direct Mode", None)
-        ])
-
-        # 去重
-        seen = set()
-        unique_strategies = []
-        for name, proxy in strategies:
-            if proxy not in seen:
-                seen.add(proxy)
-                unique_strategies.append((name, proxy))
-
-        # 2. 🧠 突触记忆重组 (读取上次成功的路径并提权置顶)
-        preferred_route = None
-        if os.path.exists(self.route_memory_path):
-            try:
-                with open(self.route_memory_path, 'r') as f:
-                    preferred_route = f.read().strip()
-            except Exception:
-                pass
-                
-        if preferred_route:
-            # 找到记忆中的通路，强行把它提到优先级第一位
-            for i, (name, proxy) in enumerate(unique_strategies):
-                if name == preferred_route:
-                    unique_strategies.insert(0, unique_strategies.pop(i))
-                    break
-
-        # 3. 动态折跃与记忆烙印
-        for name, proxy_url in unique_strategies:
-            prefix = "🌟 [记忆优先]" if name == preferred_route else "↳ [常规轮询]"
-            logger.debug(f"  {prefix} 尝试激活路由策略 [{name}] ...")
-            try:
-                if proxy_url and "socks" in proxy_url.lower():
-                    from aiohttp_socks import ProxyConnector
-                    connector = ProxyConnector.from_url(proxy_url)
-                    async with aiohttp.ClientSession(connector=connector) as session:
-                        async with session.post(url, headers=headers, json=data, timeout=30.0) as response:
-                            if response.status == 200:
-                                # 👇 [新增] 折跃成功，烙印记忆！
-                                with open(self.route_memory_path, 'w') as f:
-                                    f.write(name)
-                                return await response.json()
-                            else:
-                                err = await response.text()
-                                raise RuntimeError(f"API HTTP {response.status}: {err}")
-                else:
-                    async with aiohttp.ClientSession(trust_env=True) as session:
-                        async with session.post(url, headers=headers, json=data, proxy=proxy_url, timeout=30.0) as response:
-                            if response.status == 200:
-                                # 👇 [新增] 折跃成功，烙印记忆！
-                                with open(self.route_memory_path, 'w') as f:
-                                    f.write(name)
-                                return await response.json()
-                            else:
-                                err = await response.text()
-                                raise RuntimeError(f"API HTTP {response.status}: {err}")
-            except RuntimeError as re:
-                raise re
-            except Exception as e:
-                logger.debug(f"  💥 策略 [{name}] 折跃失败: {type(e).__name__}")
-                continue
-                
-        raise ConnectionError("所有网络突触路由均宣告折跃失败。")
-
-
-    async def _grok_cognitive_process(self, user_input: str) -> str:
-        if not self.api_key:
-            return "❌ 认知阻断：未发现 API 密钥，脑区陷入停滞。请检查 .env 文件。"
-
-        url = "https://api.x.ai/v1/chat/completions"
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}"
-        }
-        
-        system_prompt = (
-            "你是 Noa，一个运行在分布式 ZMQ 神经元网络上的具身智能中枢大脑。"
-            "你的语言风格应该极客、冷峻、充满仿生学或赛博朋克色彩。"
-            "直接回答问题，避免冗长的解释，你的输出会直接呈现在黑客终端上。"
-        )
-
-        data = {
-            "model": "grok-latest", # 👇 [修改] 丢弃已失效的测试基因 grok-beta，更迭为动态最新主流别名
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_input}
-            ],
-            "temperature": 0.6 
-        }
-
-        logger.debug(f"  ↳ 正在通过超空间突触向 Grok 请求规划...")
-        
-        try:
-            result = await self._adaptive_routing_request(url, headers, data)
-            reply = result['choices'][0]['message']['content']
-            logger.success("✅ 云端皮层计算完毕，神经冲动已顺畅回流！")
-            return reply
-            
-        # 👇 [新增] 精准捕获业务级逻辑异常（如错误的密钥或参数污染），直接将真实原因原路扔给客户端
-        except RuntimeError as e:
-            logger.error(f"❌ 大模型逻辑屏障: {e}")
-            return f"⚠️ 认知皮层遇到逻辑屏障: {e}"
-        except ConnectionError:
-            logger.error("❌ 大模型中枢断裂: 所有代理与直连通道均超时。")
-            return "⏳ 认知超时：Grok 突触在超空间折跃失败，请检查边缘网络结界。"
-        except Exception as e:
-            logger.error(f"❌ 突触崩溃: {e}")
-            return f"💥 神经突触发生未知物理崩溃: {e}"
 
 if __name__ == "__main__":
     FrontalLobe().run()

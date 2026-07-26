@@ -121,8 +121,21 @@ def start_system():
 # ========================================================
 def main():
     parser = argparse.ArgumentParser(description="🧠 Noa ZMQ Bionic AI System")
-    parser.add_argument("action", choices=["start", "stop", "tui", "approve", "log", "install", "evolve"], 
-                        help="系统核心控制指令")
+    
+    # 1. 扩充核心控制指令，加入 "add"
+    parser.add_argument(
+        "action", 
+        choices=["start", "stop", "tui", "approve", "log", "install", "evolve", "add"], 
+        help="系统核心控制指令"
+    )
+    
+    # 2. 注入可选目标参数 (使用 nargs="?"，使其在输入如 noa start 时不报错)
+    parser.add_argument(
+        "target", 
+        nargs="?", 
+        default=None, 
+        help="附加执行目标 (如: cortex)"
+    )
     
     if len(sys.argv) == 1:
         parser.print_help()
@@ -130,14 +143,19 @@ def main():
         
     args = parser.parse_args()
     
+    # ---------------- 路由分发 ----------------
     if args.action == "start":
         start_system()
+        
     elif args.action == "stop":
         stop_system()
+        
     elif args.action == "tui":
         subprocess.run([CURRENT_PYTHON, os.path.join(DNA_DIR, "local_tui.py")])
+        
     elif args.action == "approve":
         subprocess.run([CURRENT_PYTHON, os.path.join(DNA_DIR, "device_manager.py")])
+        
     elif args.action == "log":
         # 跨平台的日志流式挂载
         if sys.platform == "win32":
@@ -145,8 +163,16 @@ def main():
             subprocess.run(["powershell", "-Command", f"Get-Content '{LOG_FILE}' -Wait -Encoding utf8"])
         else:
             subprocess.run(["tail", "-f", LOG_FILE])
+            
     elif args.action in ["install", "evolve"]:
         subprocess.run([CURRENT_PYTHON, os.path.join(DNA_DIR, "sync_receptors.py")])
+        
+    # 🎯 新增的基因图谱管理路由
+    elif args.action == "add":
+        if args.target == "cortex":
+            subprocess.run([CURRENT_PYTHON, os.path.join(DNA_DIR, "cortex_manager.py")])
+        else:
+            print("⚠️ 基因指令错误。预期用法: `noa add cortex`")
 
 if __name__ == "__main__":
     main()
