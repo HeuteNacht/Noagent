@@ -135,6 +135,14 @@ app = FastAPI()
 # ========================================================
 #  5. 生命周期钩子与 WebSocket 核心交互逻辑
 # ========================================================
+
+@app.post("/internal/reload_immune")
+async def reload_immune():
+    """⚡ 暴露给内部组件的热重载受体"""
+    init_immune_system()
+    logger.success("⚡ [瞬态脉冲] 收到控制台热重载指令，免疫基因库已无感刷新！")
+    return {"status": "reloaded"}
+
 @app.on_event("startup")
 async def on_startup():
     init_immune_system()
