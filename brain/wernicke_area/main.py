@@ -73,13 +73,12 @@ class WernickeArea(NeuronNode):
 
     async def process_signal(self, topic: str, message: dict):
         """
-        网关调度总线：与前额叶完全一致的“询问-接管-发射”通用范式
+        网关调度总线：支持多突触广播机制 (Multi-Synapse Broadcasting)
         """
         payload = message.get("payload", {})
         trace_id = message.get("trace_id", "unknown")
         client_id = payload.get("client_id", "unknown")
 
-        # 构建统一的标准内部请求载荷
         internal_request = {
             "trace_id": trace_id,
             "client_id": client_id,
@@ -87,20 +86,21 @@ class WernickeArea(NeuronNode):
             "content": payload.get("content", "")
         }
 
-        # 沿着皮层链路寻找对应的功能区 (谁能处理谁接管)
         for area in self.active_cortex_areas:
             if await area.can_process(internal_request):
                 plugin_name = getattr(area, "PLUGIN_NAME", area.__name__)
-                logger.debug(f"  ↳ 信号已分配至: [{plugin_name}]")
                 
                 internal_response = await area.process(internal_request)
                 
                 if internal_response and internal_response.get("status") == "success":
-                    outbound_topic = internal_response.get("target_topic")
+                    # 💡 核心升级：获取目标频道列表 (target_topics)
+                    outbound_topics = internal_response.get("target_topics", [])
                     outbound_payload = internal_response.get("payload")
                     
-                    logger.info(f"⚡ 韦尼克皮层响应 -> 发射至频道: [{outbound_topic}]")
-                    await self.fire_signal(outbound_topic, outbound_payload)
+                    # 💡 遍历所有指定频道，进行多路发射（比如同时发给 internal 和 response）
+                    for out_topic in outbound_topics:
+                        logger.info(f"⚡ [{plugin_name}] 响应 -> 发射至频道: [{out_topic}]")
+                        await self.fire_signal(out_topic, outbound_payload)
                 return
 
         logger.warning("⚠️ 韦尼克区回路短路：所有听觉皮层均拒绝处理该指令。")
