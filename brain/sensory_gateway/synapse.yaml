@@ -6,6 +6,7 @@ identity: sensory_gateway
 listen_to_nodes:
   - frontal_lobe
   - wernicke_area   # 👈 核心关键：让网关监听韦尼克区！
+  - occipital_lobe  # 👈 必须加上枕叶区
 subscriptions:
   - "stimulus.response"
   - "brain.reply"

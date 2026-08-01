@@ -98,7 +98,8 @@ class OccipitalLobe(NeuronNode):
                     
                     for out_topic in outbound_topics:
                         logger.info(f"⚡ [{plugin_name}] 响应 -> 发射至频道: [{out_topic}]")
-                        await self.fire_signal(out_topic, outbound_payload)
+                        # 💡 关键修复：在外层包裹 {"payload": ...}，与 SensoryGateway 的解析逻辑完美对齐！
+                        await self.fire_signal(out_topic, {"payload": outbound_payload})
                 return
 
         logger.warning("⚠️ 枕叶区回路短路：所有视觉皮层均拒绝处理该指令。")

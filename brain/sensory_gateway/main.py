@@ -105,7 +105,9 @@ class SensoryGateway(NeuronNode):
         拦截内网的回传递质 (兼容文本 reply 与 语音解码的 content)
         """
         if topic in ["stimulus.response", "brain.reply"]:
-            payload = message.get("payload", {})
+            # 💡 自适应解包：优先取 message["payload"]，没有则直接用 message
+            payload = message.get("payload") if isinstance(message.get("payload"), dict) else message
+            
             client_id = payload.get("client_id")
             
             # 💡 无损兼容升级：优先取 reply，如果没有则取 content (韦尼克区发来的格式)
