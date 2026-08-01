@@ -5,5 +5,7 @@ identity: sensory_gateway
 # 无需被动监听任何其他内网脑区的 IP 地址
 listen_to_nodes:
   - frontal_lobe
+  - wernicke_area   # 👈 核心关键：让网关监听韦尼克区！
 subscriptions:
   - "stimulus.response"
+  - "brain.reply"

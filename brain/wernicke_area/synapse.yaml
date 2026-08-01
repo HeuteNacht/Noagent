@@ -1,2 +1,6 @@
 identity: wernicke_area
-bind_address: tcp://*:22004
+listen_to_nodes:
+  - sensory_gateway
+subscriptions:
+  - "stimulus.audio"
+  - "wernicke.internal"

@@ -13,7 +13,6 @@ from white_matter.neuron_base import NeuronNode
 from loguru import logger
 
 # 🎯 【FastAPI/Uvicorn 事件循环劫持】
-# 必须在 Uvicorn 启动前强行将 Windows 策略扭转为 Selector 模式，否则网关的 ZMQ 后台任务必崩
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
@@ -31,7 +30,6 @@ _DENIED_CACHE = set()
 class ConnectionManager:
     """突触连接池：用于管理并发的游离神经探针"""
     def __init__(self):
-        # 记录 client_id -> WebSocket 的物理映射
         self.active_connections: dict[str, WebSocket] = {}
 
     async def connect(self, client_id: str, websocket: WebSocket):
@@ -48,17 +46,14 @@ class ConnectionManager:
         else:
             logger.warning(f"⚠️ [投递失败] 目标设备 {client_id} 已游离或断开连接。")
 
-# 实例化突触连接池
 manager = ConnectionManager()
 
 # ========================================================
 #  3. 免疫机制核心函数
 # ========================================================
-
 def init_immune_system():
     global _APPROVED_CACHE, _PENDING_CACHE
     
-    # 🧬 [基因表达代偿] 若缺少显性抗原序列，强行从原始 DNA 模板转录出基础免疫库
     if not os.path.exists(APPROVED_DB):
         if os.path.exists(APPROVED_TEMPLATE):
             shutil.copy(APPROVED_TEMPLATE, APPROVED_DB)
@@ -66,7 +61,6 @@ def init_immune_system():
         else:
             logger.warning("⚠️ [免疫缺陷] 未找到模板文件 approved_devices.json.example，白名单初始化可能受阻。")
 
-    # 🛡️ [DNA 序列自愈保护] 防止 JSON 格式损坏导致网关崩溃
     if os.path.exists(APPROVED_DB):
         try:
             with open(APPROVED_DB, 'r') as f:
@@ -92,7 +86,6 @@ def sync_pending_to_disk():
         json.dump(list(_PENDING_CACHE), f, indent=4)
 
 async def check_and_log_device_async(client_id: str) -> bool:
-    # 0. 黑名单物理绞杀：O(1) 复杂度瞬间判定，节省算力
     if client_id in _DENIED_CACHE:
         logger.error(f"☠️ [黑名单绞杀] 恶意设备被底层防御击碎: {client_id}")
         return False
@@ -117,27 +110,32 @@ class SensoryGateway(NeuronNode):
             # 💡 无损兼容升级：优先取 reply，如果没有则取 content (韦尼克区发来的格式)
             reply_text = payload.get("reply") or payload.get("content")
             trace_id = payload.get("trace_id", "unknown")
-            data_type = payload.get("data_type", "text") # 提取数据类型标记
+            data_type = payload.get("data_type", "text") 
             
             if client_id and reply_text:
                 logger.info(f"📤 [网关回传] 意图解析完毕 (Trace: {trace_id}, Type: {data_type}) -> 正在推送至: {client_id}")
                 
-                # 精准路由：把数据和类型标记一起发回给提问终端！
                 await manager.send_personal_message({
                     "status": "success",
-                    "reply": reply_text,       # 兼容旧终端
-                    "content": reply_text,     # 兼容新终端
-                    "data_type": data_type,    # 告诉 Pythonista 这是 ipa 还是 text
+                    "reply": reply_text,       
+                    "content": reply_text,     
+                    "data_type": data_type,    
                     "trace_id": trace_id
                 }, client_id)
+
+gateway_node = SensoryGateway(
+    os.path.join(os.path.dirname(__file__), "synapse.yaml"), 
+    os.path.join(_ROOT, "dna", "known_nodes.yaml")
+)
+
+# 🚨 极其关键的一行：必须在这里初始化 app！
+app = FastAPI()
 
 # ========================================================
 #  5. 生命周期钩子与 WebSocket 核心交互逻辑
 # ========================================================
-
 @app.post("/internal/reload_immune")
 async def reload_immune():
-    """⚡ 暴露给内部组件的热重载受体"""
     init_immune_system()
     logger.success("⚡ [瞬态脉冲] 收到控制台热重载指令，免疫基因库已无感刷新！")
     return {"status": "reloaded"}
@@ -150,7 +148,7 @@ async def on_startup():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    current_client_id = None # 用于记录当前连接的身份，方便断开时清理
+    current_client_id = None 
     
     try:
         while True:
@@ -160,7 +158,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 client_id = signal.get("client_id", "unknown_device")
                 current_client_id = client_id
                 
-                # 🛡️ 零信任准入检测 (保持原逻辑不变)
+                # 🛡️ 零信任准入检测
                 if not await check_and_log_device_async(client_id):
                     logger.warning(f"⛔️ [免疫拦截] 发现陌生设备试图接入: {client_id}")
                     await websocket.send_text(json.dumps({
@@ -170,10 +168,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     await websocket.close(code=4003)
                     return
                 
-                # 登记/刷新突触连接池
                 await manager.connect(client_id, websocket)
-                
-                # 将 client_id 强行注入 payload
                 signal["client_id"] = client_id 
                 
                 # 💡 核心升级：动态路由分流引擎
@@ -185,14 +180,12 @@ async def websocket_endpoint(websocket: WebSocket):
                     target_bus = "stimulus.raw"   # 📝 文本流 -> 投射给前额叶
                     logger.success(f"🔓 [文本注入] 合法设备: {client_id} -> 路由至: {target_bus}")
                 
-                # 发送到内网相应的目标脑区
                 await gateway_node.fire_signal(target_bus, signal)
                 
             except json.JSONDecodeError:
                 await websocket.send_text(json.dumps({"error": "Invalid Format"}))
                 
     except WebSocketDisconnect:
-        # 当设备断开连接时，从突触池中注销
         if current_client_id:
             manager.disconnect(current_client_id)
 

@@ -18,7 +18,11 @@ def awaken(root_dir, current_dir):
         logger.error(f"[{PLUGIN_NAME}] 模型装载失败: {e}")
 
 async def can_process(request: dict) -> bool:
-    return request.get("data_type") == "audio_chunk"
+    # 🎯 多重防御：兼容 data_type、type 以及 payload 嵌套结构
+    dtype = request.get("data_type") or request.get("type")
+    
+    # 只要类型属于 audio_chunk 或 audio，或者含有 base64 content 均放行
+    return dtype in ["audio_chunk", "audio"] or bool(request.get("content"))
 
 async def process(request: dict) -> dict:
     if not _model: return {"status": "error"}

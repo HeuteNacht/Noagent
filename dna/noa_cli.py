@@ -82,6 +82,13 @@ def main():
             subprocess.run(["powershell", "-Command", f"Get-Content '{LOG_FILE}' -Wait -Encoding utf8"])
         else:
             subprocess.run(["tail", "-f", LOG_FILE])
+    # 🎯 新增 tui 分支：调用 local_tui.py
+    elif args.action == "tui":
+        tui_script = os.path.join(DNA_DIR, "local_tui.py")
+        if os.path.exists(tui_script):
+            subprocess.run([CURRENT_PYTHON, tui_script])
+        else:
+            print(f"⚠️ 未找到 TUI 脚本: {tui_script}")
     elif args.action == "add" and args.target == "cortex":
         subprocess.run([CURRENT_PYTHON, os.path.join(DNA_DIR, "cortex_manager.py")])
 
