@@ -38,7 +38,7 @@ async def process(request: dict) -> dict:
     
     # 构建兼容 OpenAI Vision 规范的载荷格式
     data = {
-        "model": "grok-latest", # 或根据 X.AI 最新的 vision 模型名替换为 grok-latest
+        "model": "grok-4.5", # 或根据 X.AI 最新的 vision 模型名替换为 grok-latest
         "messages": [
             {
                 "role": "user",
