@@ -1,0 +1,7 @@
+functional_areas:
+  - name: image_to_text
+    description: 视觉大模型理解皮层 (VLM)
+    enabled: true
+  - name: face_recognition
+    description: 专有面部特征识别皮层 (预留拓展)
+    enabled: false

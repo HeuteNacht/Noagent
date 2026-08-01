@@ -1,0 +1,6 @@
+identity: occipital_lobe
+listen_to_nodes:
+  - sensory_gateway
+subscriptions:
+  - "stimulus.visual"
+  - "occipital.internal"

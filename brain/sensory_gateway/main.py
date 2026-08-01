@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#Noagent/brain/sensory_gateway/main.py
 # ========================================================
 #  1. 环境初始化与依赖导入
 # ========================================================
@@ -176,6 +177,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 if data_type == "audio_chunk":
                     target_bus = "stimulus.audio" # 🎧 语音流 -> 投射给韦尼克听觉区
                     logger.success(f"🔓 [音频注入] 合法设备: {client_id} -> 路由至: {target_bus}")
+                elif data_type in ["image", "image_chunk"]:
+                    target_bus = "stimulus.visual" # 👁️ 图像流 -> 投射给枕叶视觉区
+                    logger.success(f"🔓 [图像注入] 合法设备: {client_id} -> 路由至: {target_bus}")
                 else:
                     target_bus = "stimulus.raw"   # 📝 文本流 -> 投射给前额叶
                     logger.success(f"🔓 [文本注入] 合法设备: {client_id} -> 路由至: {target_bus}")
