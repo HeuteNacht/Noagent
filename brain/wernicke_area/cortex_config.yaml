@@ -1,0 +1,7 @@
+functional_areas:
+  - name: speech_to_ipa
+    description: 声学音标提取皮层 (Allosaurus)
+    enabled: true
+  - name: ipa_to_text
+    description: 音标语义转换皮层 (IPA -> Text)
+    enabled: true

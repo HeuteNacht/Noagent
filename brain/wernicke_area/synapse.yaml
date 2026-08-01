@@ -1,0 +1,2 @@
+identity: wernicke_area
+bind_address: tcp://*:22004

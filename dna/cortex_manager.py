@@ -1,90 +1,105 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Noagent/dna/cortex_manager.py
-
+"""
+🧠 全局皮层智能发现引擎 (Global Genome Auto-Discovery Protocol)
+作用：自动扫描 brain 目录下所有脑区，动态分配 ZMQ 端口，并注册新发现的皮层脚本。
+"""
 import os
 import yaml
-import pkgutil
 
-# 精准锚定物理路径
-DNA_DIR = os.path.dirname(__file__)
-ROOT_DIR = os.path.abspath(os.path.join(DNA_DIR, '..'))
-FRONTAL_LOBE_DIR = os.path.join(ROOT_DIR, "brain", "frontal_lobe")
-CORTEX_DIR = os.path.join(FRONTAL_LOBE_DIR, "cortex")
-CONFIG_PATH = os.path.join(FRONTAL_LOBE_DIR, "cortex_config.yaml")
+DNA_DIR = os.path.dirname(os.path.abspath(__file__))
+WORKSPACE = os.path.dirname(DNA_DIR)
+BRAIN_DIR = os.path.join(WORKSPACE, "brain")
+KNOWN_NODES_PATH = os.path.join(DNA_DIR, "known_nodes.yaml")
 
-def main():
-    print("\033[1;35m========================================\033[0m")
-    print("🧠 Noa 皮层基因图谱重组终端 (Cortex Manager)")
-    print("\033[1;35m========================================\033[0m")
-
-    # 1. 读取现有的 YAML 配置 (若无则初始化空图谱)
-    config_data = {"functional_areas": []}
-    if os.path.exists(CONFIG_PATH):
-        try:
-            with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
-                config_data = yaml.safe_load(f) or {"functional_areas": []}
-        except Exception as e:
-            print(f"❌ 解析现有 cortex_config.yaml 失败: {e}")
-            return
-
-    existing_areas = {area["name"]: area for area in config_data.get("functional_areas", [])}
+def intelligent_scan():
+    print("🧬 启动全脑智能发现序列 (Global Cortex Auto-Discovery)...")
     
-    # 2. 扫描物理目录，发现所有皮层模块
-    if not os.path.exists(CORTEX_DIR):
-        print("⚠️ 未发现 cortex 物理目录，皮层完全缺失。")
-        return
-
-    found_modules = []
-    for _, module_name, _ in pkgutil.iter_modules([CORTEX_DIR]):
-        found_modules.append(module_name)
-
-    if not found_modules:
-        print("✅ 当前 cortex 目录下没有发现任何子程序。")
-        return
-
-    print(f"\n🧬 物理扫描完毕，共发现 \033[1;36m{len(found_modules)}\033[0m 个脑区模块。\n")
-
-    # 3. 开始交互式注入
-    updated_areas = []
-    for mod_name in found_modules:
-        is_known = mod_name in existing_areas
-        current_status = existing_areas[mod_name]["enabled"] if is_known else None
+    # ---------------------------------------------------------
+    # 1. 扫描物理脑区目录 & 自动更新全局注册表 known_nodes.yaml
+    # ---------------------------------------------------------
+    # 读取已注册节点
+    if os.path.exists(KNOWN_NODES_PATH):
+        with open(KNOWN_NODES_PATH, 'r', encoding='utf-8') as f:
+            connectome = yaml.safe_load(f) or {}
+    else:
+        connectome = {}
         
-        status_text = ""
-        if current_status is True:
-            status_text = "[\033[1;32m已激活\033[0m]"
-        elif current_status is False:
-            status_text = "[\033[1;31m已封印\033[0m]"
-        else:
-            status_text = "[\033[1;33m野生突变\033[0m]"
+    if 'nodes' not in connectome: connectome['nodes'] = {}
+    known_nodes = connectome['nodes']
+    
+    # 计算当前已分配的最大端口，避免冲突 (基准从 22000 开始)
+    existing_ports = [config.get('pub_port', 22000) for config in known_nodes.values()]
+    max_port = max(existing_ports) if existing_ports else 22000
 
-        desc = existing_areas[mod_name].get("description", "自定义拓展脑区") if is_known else "自定义拓展脑区"
+    # 扫描物理存在的脑区目录 (排除了 __pycache__ 等无效目录)
+    physical_lobes = [d for d in os.listdir(BRAIN_DIR) if os.path.isdir(os.path.join(BRAIN_DIR, d)) and not d.startswith("__")]
+    
+    global_update_needed = False
+    for lobe in physical_lobes:
+        if lobe not in known_nodes:
+            max_port += 1
+            known_nodes[lobe] = {
+                'host': '127.0.0.1',
+                'pub_port': max_port
+            }
+            print(f"  🌐 [中枢拓扑] 发现全新脑区器官: {lobe} -> 已分配突触端口 {max_port}")
+            global_update_needed = True
 
-        print(f"🧩 脑区: \033[1;37m{mod_name}\033[0m {status_text}")
-        ans = input(f"   ❓ 是否激活该脑区？(y:激活 / n:封印 / skip:跳过保持原样): ").strip().lower()
+    # 刷入全局注册表
+    if global_update_needed:
+        with open(KNOWN_NODES_PATH, 'w', encoding='utf-8') as f:
+            yaml.dump(connectome, f, allow_unicode=True, sort_keys=False)
+        print("  ✅ [中枢拓扑] 全局路由表 (known_nodes.yaml) 更新完毕。")
+
+    # ---------------------------------------------------------
+    # 2. 深度扫描各个脑区的 cortex 目录，并更新 cortex_config.yaml
+    # ---------------------------------------------------------
+    for lobe in physical_lobes:
+        cortex_dir = os.path.join(BRAIN_DIR, lobe, "cortex")
+        config_path = os.path.join(BRAIN_DIR, lobe, "cortex_config.yaml")
         
-        if ans == 'y':
-            updated_areas.append({"name": mod_name, "description": desc, "enabled": True})
-            print("   ✅ 基因已固化: 允许放行。")
-        elif ans == 'n':
-            updated_areas.append({"name": mod_name, "description": desc, "enabled": False})
-            print("   ⛔ 基因已固化: 物理绞杀。")
+        # 如果这个脑区没有 cortex 目录（例如 sensory_gateway），则跳过
+        if not os.path.exists(cortex_dir):
+            continue
+            
+        # 扫描存在的皮层脚本
+        py_files = [f[:-3] for f in os.listdir(cortex_dir) if f.endswith('.py') and not f.startswith("__")]
+        
+        # 读取该脑区现有的 config
+        if os.path.exists(config_path):
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config_data = yaml.safe_load(f) or {}
         else:
-            # 保持原样，如果之前有配置就沿用
-            if is_known:
-                updated_areas.append(existing_areas[mod_name])
-            print("   ⏳ 维持现状。")
-        print("-" * 40)
+            config_data = {}
+            
+        if 'functional_areas' not in config_data:
+            config_data['functional_areas'] = []
+            
+        areas = config_data['functional_areas']
+        if areas is None: areas = []
+        
+        existing_areas_names = {a.get('name', '') for a in areas}
+        
+        lobe_updated = False
+        for py_module in py_files:
+            if py_module not in existing_areas_names:
+                areas.append({
+                    'name': py_module,
+                    'description': f"Auto-detected cortex: {py_module}",
+                    'enabled': True # 默认开启新发现的皮层
+                })
+                print(f"  🧠 [{lobe}] 自动接管并注册游离皮层: {py_module}.py")
+                lobe_updated = True
+                
+        if lobe_updated:
+            config_data['functional_areas'] = areas
+            with open(config_path, 'w', encoding='utf-8') as f:
+                yaml.dump(config_data, f, allow_unicode=True, sort_keys=False)
+            print(f"  ✅ [{lobe}] 脑区基因锁 (cortex_config.yaml) 更新完毕。")
 
-    # 4. 覆盖写入 YAML
-    config_data["functional_areas"] = updated_areas
-    try:
-        with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
-            yaml.dump(config_data, f, allow_unicode=True, sort_keys=False, default_flow_style=False)
-        print("\n🎉 基因图谱重组完成！请执行 `noa restart` 或 `noa start` 使新皮层生效。")
-    except Exception as e:
-        print(f"\n❌ 落盘失败: {e}")
+    print("\n🎉 全脑扫描完成！所有新脑区与皮层已加入生命周期管理。")
+    print("💡 请执行 `noa restart` 强力重载使新神经网生效。")
 
 if __name__ == "__main__":
-    main()
+    intelligent_scan()

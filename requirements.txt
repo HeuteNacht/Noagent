@@ -1,10 +1,36 @@
-pyzmq>=25.0.0
-pyyaml>=6.0
-loguru>=0.7.0
-fastapi>=0.100.0
-uvicorn>=0.23.0
-websockets>=11.0
+
 openai>=1.0.0
 python-dotenv>=1.0.0
 aiohttp>=3.9.0
 aiohttp-socks>=0.9.0
+# Noa ZMQ Bionic AI System - Dependencies
+
+# ==========================================
+# 1. 神经中枢与白质网络 (Core Network & Messaging)
+# ==========================================
+pyzmq>=25.0.0
+loguru>=0.7.0
+pyyaml>=6.0
+
+#PyYAML>=6.0.1
+
+# ==========================================
+# 2. 感知网关与 Web 服务 (Gateway & Async Web)
+# ==========================================
+fastapi>=0.100.0
+uvicorn>=0.23.0
+#uvicorn[standard]>=0.22.0
+websockets>=11.0
+httpx>=0.24.0
+requests>=2.31.0
+
+# ==========================================
+# 3. 韦尼克听觉脑区与语音识别 (Wernicke Lobe & Speech)
+# ==========================================
+allosaurus>=1.0.2
+numpy
+
+# ==========================================
+# 4. 系统监控与进程管理 (System Management)
+# ==========================================
+psutil>=5.9.0

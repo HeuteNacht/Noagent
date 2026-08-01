@@ -1,8 +1,7 @@
 functional_areas:
-  - name: orbitofrontal_cortex
-    description: 眶额皮层 (本能反射与系统心跳握手)
-    enabled: true
-
-  - name: dorsolateral_prefrontal_cortex
-    description: 背外侧前额叶 (深度逻辑推理)
-    enabled: true
+- name: dorsolateral_prefrontal_cortex
+  description: 自定义拓展脑区
+  enabled: true
+- name: orbitofrontal_cortex
+  description: 眶额皮层 (本能反射与系统心跳握手)
+  enabled: true
